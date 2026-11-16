@@ -54,7 +54,7 @@ gizi memakai basis data TKPI dan target 30% AKG per sajian.
 Prasyarat: PHP 8.3+ (`pdo_mysql`, `mbstring`, `zip`, `gd`), Composer, MySQL 8.
 
 ```bash
-git clone https://github.com/<akun>/mbg-menu-app.git
+git clone https://github.com/gnosprinting/mbg-menu-app.git
 cd mbg-menu-app
 composer install
 cp .env.example .env
