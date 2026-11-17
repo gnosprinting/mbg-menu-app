@@ -210,8 +210,12 @@ class MbgSeeder extends Seeder
             'Kacang mete/biji jambu monyet segar' => ['Kacang pohon'],
         ];
         foreach ($map as $b => $alergens) {
+            $bahanId = $id($b);
+            if (! $bahanId) {
+                continue; // bahan belum ada pada instalasi baru; dipetakan setelah impor TKPI
+            }
             foreach ($alergens as $a) {
-                DB::table('alergen_bahan')->insert(['bahan_id' => $id($b), 'alergen_id' => $aid($a)]);
+                DB::table('alergen_bahan')->insert(['bahan_id' => $bahanId, 'alergen_id' => $aid($a)]);
             }
         }
         $sdn = DB::table('lokasi')->where('nama', 'SDN 1 Sukamaju')->value('id');
