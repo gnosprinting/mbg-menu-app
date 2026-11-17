@@ -59,5 +59,19 @@ class Siklus
                 ['nilai' => $nilai, 'updated_at' => now(), 'created_at' => now()]
             );
         }
+
+        // Jangan biarkan pengaturan menunjuk ke siklus yang belum dibuat.
+        if (! DB::table('siklus')->where('jumlah_hari', $panjang)->exists()) {
+            $nama = match ($panjang) {
+                5 => 'Siklus 5 Hari (Mingguan)',
+                10 => 'Siklus 10 Hari (Dua Mingguan)',
+                6 => 'Siklus Induk 6 Hari',
+                12 => 'Siklus 12 Hari (Pola 6 Hari)',
+            };
+            DB::table('siklus')->insert([
+                'nama' => $nama, 'versi' => '1.4', 'jumlah_hari' => $panjang,
+                'status' => 'draf', 'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
     }
 }
