@@ -13,7 +13,12 @@
   <div class="actions">
     <div class="seg">
       @foreach($opsi as $o)
-        <a class="{{ $jumlah == $o ? 'on' : '' }}" href="/siklus?hari={{ $o }}">{{ $o }} hari</a>
+        <form method="post" action="/pengaturan/siklus" style="display:contents">
+          @csrf
+          <input type="hidden" name="pola_siklus" value="{{ $pola }}">
+          <input type="hidden" name="panjang_siklus" value="{{ $o }}">
+          <button type="submit" class="{{ $jumlah == $o ? 'on' : '' }}">{{ $o }} hari</button>
+        </form>
       @endforeach
     </div>
     <button class="btn" onclick="document.getElementById('form-menu').scrollIntoView({behavior:'smooth'})">+ Tambah menu</button>

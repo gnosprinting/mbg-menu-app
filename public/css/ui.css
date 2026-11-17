@@ -158,8 +158,8 @@ summary.act::-webkit-details-marker{display:none}
 }
 .btn .act-inline{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2}
 .seg{display:flex;background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden;padding:2px}
-.seg a{padding:6px 11px;font-size:11.5px;color:var(--muted);border-radius:9px}
-.seg a.on{background:var(--lilac);color:var(--violet-d);font-weight:700}
+.seg a,.seg button{padding:6px 11px;font-size:11.5px;color:var(--muted);border-radius:9px;border:0;background:transparent;font:inherit;cursor:pointer}
+.seg a.on,.seg button.on{background:var(--lilac);color:var(--violet-d);font-weight:700}
 .tabs{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap}
 .tabs a,.tabs button{border:1px solid var(--line);background:#fff;border-radius:99px;padding:6px 12px;font-size:11.8px;color:var(--ink-2);cursor:pointer}
 .tabs .on{background:var(--lilac);border-color:#DCCFFF;color:var(--violet-d);font-weight:700}

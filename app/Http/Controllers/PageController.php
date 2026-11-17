@@ -124,12 +124,7 @@ class PageController extends Controller
         $siklus = $this->siklusAktif();
         $opsi = Siklus::opsi();
         $pola = Siklus::pola();
-        $diminta = (int) $r->hari;
-        if ($diminta && in_array($diminta, $opsi, true) && $diminta !== Siklus::panjang()) {
-            Siklus::set($pola, $diminta);
-            return redirect('/siklus?hari='.$diminta);
-        }
-        $jumlah = in_array($diminta, $opsi, true) ? $diminta : Siklus::panjang();
+        $jumlah = Siklus::panjang();
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
 
         $q = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', '<=', $jumlah);
