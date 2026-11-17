@@ -32,11 +32,15 @@
 <div class="grid g-2-1">
   <div class="card">
     <div class="table-wrap"><table>
-      <thead><tr><th>Menu</th><th>SP</th><th>Bahan</th><th>URT</th><th class="num">Berat</th><th class="num">Energi</th><th class="num">Protein</th><th class="num">Lemak</th><th class="num">KH</th><th class="num">Serat</th><th class="num">Vit A</th><th class="num">Vit B</th><th class="num">Natrium</th></tr></thead>
+      <thead><tr><th>Peran</th><th>SP</th><th>Bahan</th><th>URT</th><th class="num">Berat</th><th class="num">Energi</th><th class="num">Protein</th><th class="num">Lemak</th><th class="num">KH</th><th class="num">Serat</th><th class="num">Vit A</th><th class="num">Vit B</th><th class="num">Natrium</th></tr></thead>
       <tbody>
         @forelse($data['rows'] as $r)
           <tr style="box-shadow:inset 4px 0 0 {{ $warna[$r['kelompok']] ?? '#78819C' }}">
-            <td>{{ $r['peran'] === 'pokok' ? $menuNama : '' }}</td>
+            @php
+              $labelPeran = ['pokok'=>'Pokok','hewani'=>'Hewani','nabati'=>'Nabati','sayur'=>'Sayur','buah'=>'Buah','minyak'=>'Minyak','bumbu'=>'Bumbu'][$r['peran']] ?? ucfirst($r['peran']);
+              $warnaPeran = $warna[$labelPeran] ?? '#78819C';
+            @endphp
+            <td><span class="chip" style="background:{{ $warnaPeran }}1A;color:{{ $warnaPeran }}">{{ $labelPeran }}</span></td>
             <td>{{ $r['sp'] ?? '—' }}</td>
             <td>{{ $r['nama'] }}</td>
             <td>{{ $r['urt'] ?? '—' }}</td>

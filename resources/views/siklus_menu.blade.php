@@ -37,14 +37,14 @@
   <div class="card">
     <div class="card-head"><div><h3>Daftar menu</h3><div class="sub">Detail · ubah · hapus per hari</div></div></div>
     <div class="table-wrap"><table>
-      <thead><tr><th>Hari</th><th>Tanggal</th><th>Menu</th><th>Hewani</th><th>Nabati</th><th>Sayur</th><th>Buah</th><th class="num">Energi</th><th>Aksi</th></tr></thead>
+      <thead><tr><th>Hari</th><th>Tanggal</th><th>Menu</th><th>Pokok</th><th>Hewani</th><th>Nabati</th><th>Sayur</th><th>Buah</th><th class="num">Energi</th><th>Aksi</th></tr></thead>
       <tbody>
         @forelse($menu as $m)
           <tr>
             <td class="strong">{{ $m->hari }}</td>
             <td>{{ $m->tanggal ? \Illuminate\Support\Carbon::parse($m->tanggal)->format('d M Y') : '—' }}</td>
             <td class="strong">{{ $m->nama }}</td>
-            @foreach(['hewani','nabati','sayur','buah'] as $peran)
+            @foreach(['pokok','hewani','nabati','sayur','buah'] as $peran)
               <td>{{ $m->items->where('peran', $peran)->pluck('nama')->implode(', ') ?: '—' }}</td>
             @endforeach
             <td class="num">{{ round($m->energi) }} kkal</td>
@@ -56,10 +56,10 @@
             </td>
           </tr>
         @empty
-          <tr><td colspan="9" class="empty">Belum ada menu pada rentang ini.</td></tr>
+          <tr><td colspan="10" class="empty">Belum ada menu pada rentang ini.</td></tr>
         @endforelse
         @for($h = $menu->count() + 1; $h <= $jumlah; $h++)
-          <tr><td class="strong">{{ $h }}</td><td class="muted">—</td><td colspan="6" class="muted">Belum diisi</td><td><span class="chip orange">Belum</span></td></tr>
+          <tr><td class="strong">{{ $h }}</td><td class="muted">—</td><td colspan="7" class="muted">Belum diisi</td><td><span class="chip orange">Belum</span></td></tr>
         @endfor
       </tbody>
     </table></div>
@@ -100,8 +100,8 @@
               @foreach(['pokok','hewani','nabati','sayur','buah','minyak','bumbu'] as $p)<option value="{{ $p }}">{{ ucfirst($p) }}</option>@endforeach
             </select>
           </label>
-          <label class="field">Gram (otomatis)<input type="number" step="0.1" id="gram-inp" value="{{ $base['pokok'] }}" disabled style="background:#F3F5FB;color:#6B7390;cursor:not-allowed">
-            <input type="hidden" name="gram" id="gram-hidden" value="{{ $base['pokok'] }}">
+          <label class="field">Gram
+            <input type="number" step="0.1" min="0.1" name="gram" id="gram-inp" value="{{ $base['pokok'] }}">
           </label>
         </div>
         <div class="footnote" id="gram-note">Gram basis SD 1–3 · kategori lain mengikuti profil.</div>
@@ -127,12 +127,11 @@
   function updateGram() {
     const p = peranSel.value;
     gramInp.value = base[p] ?? 0;
-    document.getElementById('gram-hidden').value = base[p] ?? 0;
     document.querySelectorAll('#gram-preview td[data-kat]').forEach(td => {
       const id = td.getAttribute('data-kat');
       td.textContent = (profiles[id] && profiles[id][p] !== undefined) ? profiles[id][p] : 0;
     });
-    document.getElementById('gram-note').textContent = 'Gram basis SD 1–3 = ' + (base[p] ?? 0) + ' g; kategori lain dihitung otomatis.';
+    document.getElementById('gram-note').textContent = 'Rekomendasi SD 1–3 = ' + (base[p] ?? 0) + ' g · bisa diubah manual; kategori lain mengikuti profil.';
   }
   peranSel.addEventListener('change', updateGram);
   updateGram();

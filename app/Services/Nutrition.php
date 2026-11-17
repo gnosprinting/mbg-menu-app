@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
 class Nutrition
@@ -71,10 +72,21 @@ class Nutrition
      */
     public static function komposisi(int $kategoriId, int $hari, ?int $siklusId = null): array
     {
+        $versi = (int) Cache::get('mbg.cache_version', 1);
+        $key = "nutrisi:v{$versi}:k{$kategoriId}:h{$hari}:s".($siklusId ?? 0);
+        $cached = Cache::get($key);
+        if (is_string($cached)) {
+            $data = json_decode($cached, true);
+            if (is_array($data) && isset($data['rows'])) {
+                return $data;
+            }
+        }
+
         $base = self::baseProfile();
         $prof = self::profile($kategoriId);
+        $target = self::target($kategoriId);
         $rows = [];
-        $t = ['gram' => 0, 'energi' => 0, 'protein' => 0, 'lemak' => 0, 'kh' => 0, 'natrium' => 0, 'serat' => 0];
+        $t = ['gram' => 0, 'energi' => 0, 'protein' => 0, 'lemak' => 0, 'kh' => 0, 'natrium' => 0, 'serat' => 0, 'vit_a' => 0, 'vit_b' => 0];
 
         foreach (self::menu($hari, $siklusId) as $m) {
             $peran = $m->peran === 'bumbu' ? 'bumbu' : $m->peran;
@@ -101,18 +113,21 @@ class Nutrition
 
             $t['gram'] += $gram; $t['energi'] += $e; $t['protein'] += $p;
             $t['lemak'] += $l; $t['kh'] += $k; $t['natrium'] += $na; $t['serat'] += $fi;
-            $t['vit_a'] = ($t['vit_a'] ?? 0) + $va;
-            $t['vit_b'] = ($t['vit_b'] ?? 0) + $vb;
+            $t['vit_a'] += $va; $t['vit_b'] += $vb;
         }
 
-        $pct = fn ($v, $target) => $target > 0 ? $v / $target * 100 : 0;
+        $pct = fn ($v, $tgt) => $tgt > 0 ? $v / $tgt * 100 : 0;
 
-        return ['rows' => $rows, 'total' => $t, 'target' => self::target($kategoriId), 'pct' => [
-            'energi' => $pct($t['energi'], self::target($kategoriId)['energi']),
-            'protein' => $pct($t['protein'], self::target($kategoriId)['protein']),
-            'lemak' => $pct($t['lemak'], self::target($kategoriId)['lemak']),
-            'kh' => $pct($t['kh'], self::target($kategoriId)['kh']),
+        $result = ['rows' => $rows, 'total' => $t, 'target' => $target, 'pct' => [
+            'energi' => $pct($t['energi'], $target['energi']),
+            'protein' => $pct($t['protein'], $target['protein']),
+            'lemak' => $pct($t['lemak'], $target['lemak']),
+            'kh' => $pct($t['kh'], $target['kh']),
         ]];
+
+        Cache::put($key, json_encode($result), 600);
+
+        return $result;
     }
 
     public static function target(int $kategoriId): array
