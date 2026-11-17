@@ -71,7 +71,7 @@
       <form method="post" action="/menu">
         @csrf
         <div class="formgrid" style="grid-template-columns:1fr 1fr">
-          <label class="field">Hari ke<input type="number" name="hari" min="1" max="12" value="{{ $menu->count() + 1 }}" required></label>
+          <label class="field">Hari ke<input type="number" name="hari" min="1" max="12" value="{{ min(12, $menu->count() + 1) }}" required></label>
           <label class="field">Tanggal<input type="date" name="tanggal" value="{{ now()->toDateString() }}"></label>
         </div>
         <label class="field" style="margin-top:8px">Nama menu<input name="nama" placeholder="mis. Ayam kecap" required></label>

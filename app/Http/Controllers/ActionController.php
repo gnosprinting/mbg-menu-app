@@ -62,18 +62,38 @@ class ActionController extends Controller
     {
         $data = $r->validate([
             'hari' => 'required|integer|min:1|max:12',
+            'tanggal' => 'nullable|date',
             'nama' => 'required|string|max:120',
             'metode' => 'nullable|string|max:60',
         ]);
         $siklus = DB::table('siklus')->orderByDesc('id')->first();
+        $tanggal = $data['tanggal'] ?? now()->toDateString();
 
-        DB::table('menu_hari')->updateOrInsert(
-            ['siklus_id' => $siklus->id, 'hari' => $data['hari']],
-            ['nama' => $data['nama'], 'metode' => $data['metode'] ?? null,
-             'updated_at' => now(), 'created_at' => now()]
-        );
+        $row = DB::table('menu_hari')
+            ->where('siklus_id', $siklus->id)->where('hari', $data['hari'])->first();
 
-        return back()->with('ok', 'Menu hari '.$data['hari'].' disimpan.');
+        if ($row) {
+            DB::table('menu_hari')->where('id', $row->id)->update([
+                'nama' => $data['nama'],
+                'tanggal' => $tanggal,
+                'metode' => $data['metode'] ?? null,
+                'updated_at' => now(),
+            ]);
+        } else {
+            DB::table('menu_hari')->insert([
+                'siklus_id' => $siklus->id,
+                'hari' => $data['hari'],
+                'tanggal' => $tanggal,
+                'nama' => $data['nama'],
+                'metode' => $data['metode'] ?? null,
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+
+        // Tampilkan hari yang baru disimpan: mode 12 hari bila hari > 6.
+        $tampil = $data['hari'] > 6 ? 12 : 6;
+
+        return redirect('/siklus?hari='.$tampil)->with('ok', 'Menu hari '.$data['hari'].' disimpan.');
     }
 
     public function storeMenuBahan(Request $r)

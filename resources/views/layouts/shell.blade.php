@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="/css/ui.css?v=5">
+<link rel="stylesheet" href="/css/ui.css?v=6">
 <script>document.documentElement.dataset.theme = localStorage.getItem("mbg-theme") || "light";</script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="/js/search-select.js?v=2" defer></script>
@@ -88,9 +88,13 @@ $nav = fn ($path) => request()->is($path) ? 'on' : '';
       <div><b>{{ $u->name ?? 'Pengguna' }}</b><small>{{ $role }} · SPPG Wareg</small></div>
     </div>
   </aside>
+  <div class="nav-backdrop" id="nav-backdrop"></div>
 
   <div class="main">
     <header class="head">
+      <button class="icon-btn menu-btn" id="menu-btn" aria-label="Buka menu" aria-expanded="false">
+        <i class="fa-solid fa-bars"></i>
+      </button>
       <div class="m-brand"><div class="logo">M</div></div>
       <div class="search">
         <i class="fa-solid {{ $I['search'] }}"></i>
@@ -131,6 +135,26 @@ $nav = fn ($path) => request()->is($path) ? 'on' : '';
       paint();
     });
     paint();
+  })();
+</script>
+<script>
+  (function () {
+    var btn = document.getElementById('menu-btn');
+    var side = document.querySelector('.side');
+    var bd = document.getElementById('nav-backdrop');
+    if (!btn || !side || !bd) return;
+    function setNav(open) {
+      side.classList.toggle('open', open);
+      bd.classList.toggle('show', open);
+      document.body.classList.toggle('nav-open', open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    }
+    btn.addEventListener('click', function () { setNav(!side.classList.contains('open')); });
+    bd.addEventListener('click', function () { setNav(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setNav(false); });
+    side.querySelectorAll('a').forEach(function (a) {
+      a.addEventListener('click', function () { setNav(false); });
+    });
   })();
 </script>
 </body>
