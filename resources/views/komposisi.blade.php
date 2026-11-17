@@ -31,6 +31,12 @@
 
 <div class="grid g-2-1">
   <div class="card">
+    <div class="card-head">
+      <div>
+        <h3 style="font-size:14px">Menu: {{ $menuNama !== '—' ? $menuNama : 'belum diisi' }}</h3>
+        <div class="sub">Hari {{ $hari }} · {{ $kat->nama }} · komposisi per bahan</div>
+      </div>
+    </div>
     <div class="table-wrap"><table>
       <thead><tr><th>Peran</th><th>SP</th><th>Bahan</th><th>URT</th><th class="num">Berat</th><th class="num">Energi</th><th class="num">Protein</th><th class="num">Lemak</th><th class="num">KH</th><th class="num">Serat</th><th class="num">Vit A</th><th class="num">Vit B</th><th class="num">Natrium</th></tr></thead>
       <tbody>
