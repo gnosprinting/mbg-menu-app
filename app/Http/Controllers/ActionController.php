@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\Siklus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
@@ -60,13 +61,14 @@ class ActionController extends Controller
 
     public function storeMenu(Request $r)
     {
+        $maks = Siklus::panjang();
         $data = $r->validate([
-            'hari' => 'required|integer|min:1|max:12',
+            'hari' => 'required|integer|min:1|max:'.$maks,
             'tanggal' => 'nullable|date',
             'nama' => 'required|string|max:120',
             'metode' => 'nullable|string|max:60',
         ]);
-        $siklus = DB::table('siklus')->orderByDesc('id')->first();
+        $siklus = Siklus::aktif();
         $tanggal = $data['tanggal'] ?? now()->toDateString();
 
         $row = DB::table('menu_hari')
@@ -90,10 +92,7 @@ class ActionController extends Controller
             ]);
         }
 
-        // Tampilkan hari yang baru disimpan: mode 12 hari bila hari > 6.
-        $tampil = $data['hari'] > 6 ? 12 : 6;
-
-        return redirect('/siklus?hari='.$tampil)->with('ok', 'Menu hari '.$data['hari'].' disimpan.');
+        return redirect('/siklus?hari='.Siklus::panjang())->with('ok', 'Menu hari '.$data['hari'].' disimpan.');
     }
 
     public function storeMenuBahan(Request $r)
@@ -187,6 +186,22 @@ class ActionController extends Controller
         }
 
         return back()->with('ok', 'Pengaturan disimpan.');
+    }
+
+    public function updateSiklus(Request $r)
+    {
+        $pola = (string) $r->input('pola_siklus');
+        $panjang = (int) $r->input('panjang_siklus');
+        $opsi = $pola === Siklus::POLA_ENAM ? [6, 12] : [5, 10];
+
+        if (! in_array($pola, [Siklus::POLA_LIMA, Siklus::POLA_ENAM], true)
+            || ! in_array($panjang, $opsi, true)) {
+            return back()->with('galat', 'Pilihan pola siklus tidak valid.');
+        }
+
+        Siklus::set($pola, $panjang);
+
+        return back()->with('ok', 'Pola siklus diubah ke '.$pola.' · '.$panjang.' hari.');
     }
 
     public function storeHaccp(Request $r)

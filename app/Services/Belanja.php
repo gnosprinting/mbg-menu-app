@@ -10,9 +10,9 @@ class Belanja
      * Kebutuhan bahan untuk satu kategori, satu hari, sejumlah porsi.
      * Aturan: nasi → beras (÷2,6), koreksi BDD, buffer 10%.
      */
-    public static function kebutuhan(int $kategoriId, int $hari, int $porsi): array
+    public static function kebutuhan(int $kategoriId, int $hari, int $porsi, ?int $siklusId = null): array
     {
-        $komp = Nutrition::komposisi($kategoriId, $hari);
+        $komp = Nutrition::komposisi($kategoriId, $hari, $siklusId);
         $buffer = 1 + ((float) (DB::table('pengaturan')->where('kunci', 'buffer_belanja')->value('nilai') ?? 10) / 100);
         $beras = DB::table('bahan')->where('nama', 'Beras putih')->first();
         $rows = [];
@@ -51,7 +51,7 @@ class Belanja
         return ['rows' => $rows, 'total' => $total];
     }
 
-    public static function perKategoriHariIni(int $hari): array
+    public static function perKategoriHariIni(int $hari, ?int $siklusId = null): array
     {
         $kategori = DB::table('kategori')->orderBy('urutan')->get();
         $penerima = DB::table('penerima_kategori')->whereNull('berlaku_sampai')
@@ -61,8 +61,8 @@ class Belanja
 
         foreach ($kategori as $k) {
             $porsi = (int) ($penerima[$k->id] ?? 100) ?: 100;
-            $b = self::kebutuhan($k->id, $hari, $porsi);
-            $c = Nutrition::komposisi($k->id, $hari);
+            $b = self::kebutuhan($k->id, $hari, $porsi, $siklusId);
+            $c = Nutrition::komposisi($k->id, $hari, $siklusId);
             $rows[] = [
                 'kategori' => $k->nama, 'porsi' => $porsi, 'energi' => $c['total']['energi'],
                 'protein' => $c['total']['protein'], 'capaian' => $c['pct']['energi'], 'belanja' => $b['total'],

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Belanja;
 use App\Services\Nutrition;
+use App\Services\Siklus;
 use Dompdf\Dompdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -41,7 +42,7 @@ class ExportController extends Controller
     {
         [$kat, $hari, $porsi] = $this->ctx($r);
         $data = Nutrition::komposisi($kat->id, $hari);
-        $menu = DB::table('menu_hari')->where('hari', $hari)->value('nama');
+        $menu = DB::table('menu_hari')->where('siklus_id', Siklus::aktif()->id)->where('hari', $hari)->value('nama');
 
         return $this->pdf('exports.komposisi', compact('kat', 'hari', 'data', 'menu'),
             'Komposisi_'.$kat->kode.'_H'.$hari.'.pdf');
@@ -79,7 +80,7 @@ class ExportController extends Controller
     {
         [$kat, $hari] = $this->ctx($r);
         $data = Nutrition::komposisi($kat->id, $hari);
-        $menu = DB::table('menu_hari')->where('hari', $hari)->value('nama');
+        $menu = DB::table('menu_hari')->where('siklus_id', Siklus::aktif()->id)->where('hari', $hari)->value('nama');
 
         $s = new Spreadsheet();
         $sh = $s->getActiveSheet();
@@ -197,7 +198,7 @@ class ExportController extends Controller
     {
         $hari = (int) ($r->hari ?: 3);
         $rows = $this->alergiRows($hari);
-        $menu = DB::table('menu_hari')->where('hari', $hari)->value('nama') ?? '—';
+        $menu = DB::table('menu_hari')->where('siklus_id', Siklus::aktif()->id)->where('hari', $hari)->value('nama') ?? '—';
 
         return $this->pdf('exports.alergi', compact('rows', 'hari', 'menu'), 'Laporan_Alergi_H'.$hari.'.pdf');
     }
@@ -206,7 +207,7 @@ class ExportController extends Controller
     {
         $hari = (int) ($r->hari ?: 3);
         $rows = $this->alergiRows($hari);
-        $menu = DB::table('menu_hari')->where('hari', $hari)->value('nama') ?? '—';
+        $menu = DB::table('menu_hari')->where('siklus_id', Siklus::aktif()->id)->where('hari', $hari)->value('nama') ?? '—';
 
         $s = new Spreadsheet();
         $sh = $s->getActiveSheet();

@@ -35,7 +35,7 @@
       <div class="logo">M</div>
       <h1>Menu MBG</h1>
       <p>Perencanaan menu, capaian gizi, kebutuhan bahan, deteksi alergi, dan stok dalam satu alur kerja SPPG.</p>
-      <div class="badges"><span>TKPI 2018</span><span>AKG 2019</span><span>DBMP ed. 5</span><span>Siklus 6/12 hari</span></div>
+      <div class="badges"><span>TKPI 2018</span><span>AKG 2019</span><span>DBMP ed. 5</span><span>Siklus 5/10 · 6/12</span></div>
     </div>
     <div class="right">
       <h2>Masuk</h2>

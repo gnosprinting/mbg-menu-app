@@ -18,7 +18,7 @@
         @endforeach
       </select>
       <select name="hari" onchange="this.form.submit()" style="border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-size:11.8px;background:#fff">
-        @for($h = 1; $h <= 6; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
+        @for($h = 1; $h <= $jumlah; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
       </select>
     </form>
     <a class="btn" href="/export/capaian.pdf?kategori={{ $kat->id }}&hari={{ $hari }}">Unduh laporan</a>

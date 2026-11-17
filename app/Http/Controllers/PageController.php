@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Services\Belanja;
 use App\Services\Nutrition;
+use App\Services\Siklus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -12,7 +13,7 @@ class PageController extends Controller
 {
     private function siklusAktif()
     {
-        return DB::table('siklus')->orderByDesc('id')->first();
+        return Siklus::aktif();
     }
 
     private function kategoriList()
@@ -20,9 +21,10 @@ class PageController extends Controller
         return DB::table('kategori')->orderBy('urutan')->get();
     }
 
-    private function menuNama(int $hari): string
+    private function menuNama(int $hari, ?int $siklusId = null): string
     {
-        return DB::table('menu_hari')->where('hari', $hari)->value('nama') ?? '—';
+        return DB::table('menu_hari')->where('siklus_id', $siklusId ?? $this->siklusAktif()->id)
+            ->where('hari', $hari)->value('nama') ?? '—';
     }
 
     /** Profil gram per kategori, dipakai untuk gramasi otomatis di form menu. */
@@ -56,14 +58,14 @@ class PageController extends Controller
             $data = (function () use ($siklus, $hari) {
             $penerima = Belanja::totalPenerima();
             $pagu = (int) DB::table('lokasi')->where('aktif', true)->sum('pagu_harian');
-            $belanja = Belanja::perKategoriHariIni($hari);
+            $belanja = Belanja::perKategoriHariIni($hari, $siklus->id);
             $sd = DB::table('kategori')->where('kode', 'SD13')->first();
 
-            // Hanya hari dalam siklus (6/12). Menu uji beban (hari >= 100) tidak ikut dihitung.
-            $menu = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', '<=', 12)
+            // Hanya hari dalam siklus aktif. Menu uji beban (hari >= 100) tidak ikut dihitung.
+            $menu = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', '<=', Siklus::panjang())
                 ->orderBy('hari')->get()
-                ->map(function ($m) use ($sd) {
-                    $k = Nutrition::komposisi($sd->id, $m->hari);
+                ->map(function ($m) use ($sd, $siklus) {
+                    $k = Nutrition::komposisi($sd->id, $m->hari, $siklus->id);
                     $m->energi = $k['total']['energi'];
                     $m->capaian = $k['pct']['energi'];
                     $m->jumlah_bahan = DB::table('menu_bahan')->where('menu_hari_id', $m->id)->count();
@@ -75,7 +77,7 @@ class PageController extends Controller
             $pmTerpicu = $this->deteksiAlergi($hari);
             $avg = collect($belanja['rows'])->avg('capaian') ?? 0;
 
-            $c3 = Nutrition::komposisi($sd->id, $hari);
+            $c3 = Nutrition::komposisi($sd->id, $hari, $siklus->id);
             $e3 = max($c3['total']['energi'], 1);
             $dist = [
                 'protein' => $c3['total']['protein'] * 4 / $e3 * 100,
@@ -120,7 +122,14 @@ class PageController extends Controller
     public function siklus(Request $r)
     {
         $siklus = $this->siklusAktif();
-        $jumlah = in_array((int) $r->hari, [6, 12], true) ? (int) $r->hari : 6;
+        $opsi = Siklus::opsi();
+        $pola = Siklus::pola();
+        $diminta = (int) $r->hari;
+        if ($diminta && in_array($diminta, $opsi, true) && $diminta !== Siklus::panjang()) {
+            Siklus::set($pola, $diminta);
+            return redirect('/siklus?hari='.$diminta);
+        }
+        $jumlah = in_array($diminta, $opsi, true) ? $diminta : Siklus::panjang();
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
 
         $q = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', '<=', $jumlah);
@@ -130,10 +139,10 @@ class PageController extends Controller
         if ($r->sampai) {
             $q->whereDate('tanggal', '<=', $r->sampai);
         }
-        $menu = $q->orderBy('hari')->get()->map(function ($m) use ($sd) {
+        $menu = $q->orderBy('hari')->get()->map(function ($m) use ($sd, $siklus) {
             $m->items = DB::table('menu_bahan as mb')->join('bahan as b', 'b.id', '=', 'mb.bahan_id')
                 ->where('mb.menu_hari_id', $m->id)->orderBy('mb.id')->get(['mb.id', 'mb.gram', 'mb.peran', 'b.nama']);
-            $m->energi = Nutrition::komposisi($sd->id, $m->hari)['total']['energi'];
+            $m->energi = Nutrition::komposisi($sd->id, $m->hari, $siklus->id)['total']['energi'];
 
             return $m;
         });
@@ -157,7 +166,7 @@ class PageController extends Controller
         $kategori = $this->kategoriList();
         $base = $this->profiles()[$sd->id];
 
-        return view('siklus_menu', compact('siklus', 'menu', 'bahan', 'jumlah', 'profiles', 'kategori', 'base'));
+        return view('siklus_menu', compact('siklus', 'menu', 'bahan', 'jumlah', 'opsi', 'pola', 'profiles', 'kategori', 'base'));
     }
 
     public function siklusDetail(int $id)
@@ -168,7 +177,7 @@ class PageController extends Controller
             ->where('mb.menu_hari_id', $id)->orderBy('mb.id')
             ->get(['mb.id', 'mb.gram', 'mb.peran', 'b.nama', 'b.kelompok', 'b.energi', 'b.protein']);
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
-        $komp = Nutrition::komposisi($sd->id, $m->hari);
+        $komp = Nutrition::komposisi($sd->id, $m->hari, $m->siklus_id);
 
         return view('siklus_detail', compact('m', 'items', 'komp', 'sd'));
     }
@@ -177,22 +186,30 @@ class PageController extends Controller
     {
         $kategori = $this->kategoriList();
         $kat = DB::table('kategori')->find($r->kategori ?? DB::table('kategori')->where('kode', 'SD13')->value('id'));
+        $siklus = $this->siklusAktif();
         $hari = (int) ($r->hari ?: 1);
-        $data = Nutrition::komposisi($kat->id, $hari);
-        $menuNama = $this->menuNama($hari);
+        if ($hari < 1 || $hari > $siklus->jumlah_hari) {
+            $hari = 1;
+        }
+        $data = Nutrition::komposisi($kat->id, $hari, $siklus->id);
+        $menuNama = $this->menuNama($hari, $siklus->id);
 
-        return view('komposisi', compact('kategori', 'kat', 'hari', 'data', 'menuNama'));
+        return view('komposisi', compact('kategori', 'kat', 'hari', 'data', 'menuNama') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
     public function capaian(Request $r)
     {
         $kategori = $this->kategoriList();
         $kat = DB::table('kategori')->find($r->kategori ?? DB::table('kategori')->where('kode', 'SD13')->value('id'));
+        $siklus = $this->siklusAktif();
         $hari = (int) ($r->hari ?: 1);
-        $data = Nutrition::komposisi($kat->id, $hari);
+        if ($hari < 1 || $hari > $siklus->jumlah_hari) {
+            $hari = 1;
+        }
+        $data = Nutrition::komposisi($kat->id, $hari, $siklus->id);
 
-        $semua = $kategori->map(function ($k) use ($hari) {
-            $c = Nutrition::komposisi($k->id, $hari);
+        $semua = $kategori->map(function ($k) use ($hari, $siklus) {
+            $c = Nutrition::komposisi($k->id, $hari, $siklus->id);
             $k->energi = $c['total']['energi'];
             $k->protein = $c['total']['protein'];
             $k->pct = $c['pct']['energi'];
@@ -201,26 +218,35 @@ class PageController extends Controller
             return $k;
         });
 
-        return view('capaian', compact('kategori', 'kat', 'hari', 'data', 'semua'));
+        return view('capaian', compact('kategori', 'kat', 'hari', 'data', 'semua') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
     public function kebutuhan(Request $r)
     {
         $kategori = $this->kategoriList();
         $kat = DB::table('kategori')->find($r->kategori ?? DB::table('kategori')->where('kode', 'SD13')->value('id'));
+        $siklus = $this->siklusAktif();
         $hari = (int) ($r->hari ?: 1);
+        if ($hari < 1 || $hari > $siklus->jumlah_hari) {
+            $hari = 1;
+        }
         $porsi = (int) ($r->porsi ?: 100);
-        $keb = Belanja::kebutuhan($kat->id, $hari, $porsi);
+        $keb = Belanja::kebutuhan($kat->id, $hari, $porsi, $siklus->id);
         $pagu = (int) round($porsi * 10000);
         $penerima = Belanja::totalPenerima();
-        $semua = Belanja::perKategoriHariIni($hari);
+        $semua = Belanja::perKategoriHariIni($hari, $siklus->id);
 
-        return view('kebutuhan', compact('kategori', 'kat', 'hari', 'porsi', 'keb', 'pagu', 'penerima', 'semua'));
+        return view('kebutuhan', compact('kategori', 'kat', 'hari', 'porsi', 'keb', 'pagu', 'penerima', 'semua') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
     public function alergi(Request $r)
     {
+        $siklus = $this->siklusAktif();
+        $jumlah = $siklus->jumlah_hari;
         $hari = (int) ($r->hari ?: 3);
+        if ($hari < 1 || $hari > $jumlah) {
+            $hari = 1;
+        }
         $tab = in_array($r->tab, ['periksa', 'aturan'], true) ? $r->tab : 'periksa';
         $pm = DB::table('pm_alergi as p')
             ->leftJoin('kategori as k', 'k.id', '=', 'p.kategori_id')
@@ -236,18 +262,18 @@ class PageController extends Controller
         $lokasi = DB::table('lokasi')->orderBy('nama')->get();
         $alergen = DB::table('alergen')->orderBy('nama')->get();
         $kategori = $this->kategoriList();
-        $menu = DB::table('menu_hari')->where('hari', $hari)->first();
+        $menu = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', $hari)->first();
         $v = $this->varianData();
 
         return view('alergi', array_merge(
-            compact('pm', 'terpicu', 'lokasi', 'alergen', 'hari', 'menu', 'kategori', 'tab'),
+            compact('pm', 'terpicu', 'lokasi', 'alergen', 'hari', 'menu', 'kategori', 'tab') + ['jumlah' => $jumlah],
             $v
         ));
     }
 
     private function deteksiAlergi(int $hari): array
     {
-        $mh = DB::table('menu_hari')->where('hari', $hari)->first();
+        $mh = DB::table('menu_hari')->where('siklus_id', $this->siklusAktif()->id)->where('hari', $hari)->first();
         if (! $mh) {
             return [];
         }
@@ -506,14 +532,15 @@ class PageController extends Controller
         $natriumMax = (float) (DB::table('pengaturan')->where('kunci', 'natrium_max')->value('nilai') ?? 600);
         $menuPre = [];
         if ($pre) {
-            for ($h = 1; $h <= 6; $h++) {
-                $k = Nutrition::komposisi($pre->id, $h);
+            $siklus = $this->siklusAktif();
+            for ($h = 1; $h <= Siklus::panjang(); $h++) {
+                $k = Nutrition::komposisi($pre->id, $h, $siklus->id);
                 if (($k['total']['energi'] ?? 0) <= 0) {
                     continue;
                 }
                 $menuPre[] = [
                     'hari' => $h,
-                    'menu' => DB::table('menu_hari')->where('hari', $h)->value('nama') ?? '—',
+                    'menu' => DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', $h)->value('nama') ?? '—',
                     'energi' => $k['total']['energi'],
                     'natrium' => $k['total']['natrium'],
                     'aman' => $k['total']['natrium'] <= $natriumMax,
@@ -529,7 +556,11 @@ class PageController extends Controller
         $settings = DB::table('pengaturan')->pluck('nilai', 'kunci')->all();
         $kategori = $this->kategoriList();
         $lokasi = DB::table('lokasi')->orderBy('nama')->get();
+        $pola = Siklus::pola();
+        $panjang = Siklus::panjang();
+        $opsi = Siklus::opsi();
+        $siklusAktif = Siklus::aktif();
 
-        return view('pengaturan', compact('settings', 'kategori', 'lokasi'));
+        return view('pengaturan', compact('settings', 'kategori', 'lokasi', 'pola', 'panjang', 'opsi', 'siklusAktif'));
     }
 }

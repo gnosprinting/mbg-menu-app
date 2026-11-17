@@ -52,6 +52,7 @@ Route::middleware('auth')->group(function () {
         Route::post('/menu-bahan', [ActionController::class, 'storeMenuBahan'])->name('menu-bahan.store');
         Route::post('/pm-alergi', [ActionController::class, 'storePmAlergi'])->name('pm.store');
         Route::post('/pengaturan', [ActionController::class, 'updatePengaturan'])->name('pengaturan.update');
+        Route::post('/pengaturan/siklus', [ActionController::class, 'updateSiklus'])->name('pengaturan.siklus');
         Route::post('/bahan/{id}', [ActionController::class, 'updateBahan'])->name('bahan.update');
         Route::post('/bahan/{id}/hapus', [ActionController::class, 'deleteBahan'])->name('bahan.delete');
         Route::post('/menu/{id}', [ActionController::class, 'updateMenu'])->name('menu.update');

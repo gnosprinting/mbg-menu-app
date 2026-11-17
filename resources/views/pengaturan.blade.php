@@ -2,6 +2,7 @@
 @section('title','Pengaturan')
 @section('content')
 @if(session('ok'))<div class="alert ok">✓ {{ session('ok') }}</div>@endif
+@if(session('galat'))<div class="alert bad">⚠ {{ session('galat') }}</div>@endif
 @if($errors->any())<div class="alert bad">⚠ {{ $errors->first() }}</div>@endif
 
 <div class="page-top">
@@ -66,6 +67,36 @@
 </div>
 
 <div class="card" style="margin-top:14px">
+  <div class="card-head">
+    <div><h3>Pola siklus menu</h3><div class="sub">Menentukan keluarga siklus dan panjang hari yang dipakai seluruh perhitungan</div></div>
+    <div class="right"><span class="chip violet">Aktif: {{ $pola }} · {{ $panjang }} hari</span></div>
+  </div>
+  <form method="post" action="/pengaturan/siklus">
+    @csrf
+    <div class="formgrid" style="grid-template-columns:1fr 1fr">
+      <label class="field">Pola siklus
+        <select name="pola_siklus" id="pola-sel">
+          <option value="5/10" {{ $pola === '5/10' ? 'selected' : '' }}>5/10 — 5 hari pelayanan/minggu (rekomendasi)</option>
+          <option value="6/12" {{ $pola === '6/12' ? 'selected' : '' }}>6/12 — pola lama 6 hari pelayanan</option>
+        </select>
+      </label>
+      <label class="field">Panjang siklus aktif
+        <select name="panjang_siklus" id="panjang-sel">
+          @foreach([5, 10, 6, 12] as $o)
+            <option value="{{ $o }}" data-pola="{{ in_array($o, [5, 10], true) ? '5/10' : '6/12' }}" {{ $panjang === $o ? 'selected' : '' }}>{{ $o }} hari{{ $o === 5 || $o === 6 ? ' (mingguan)' : ' (dua mingguan)' }}</option>
+          @endforeach
+        </select>
+      </label>
+    </div>
+    <div class="footnote" style="margin-top:8px">
+      Pola 5/10 selaras dengan 5 hari pelayanan efektif per minggu (Peraturan BGN 13/2026). Pola 6/12 dipertahankan untuk dapur dengan 6 hari pelayanan; menu hari ke-6/12 akan bergeser bila hanya 5 hari pelayanan.
+      Siklus aktif sekarang: <b>{{ $siklusAktif->nama }}</b>.
+    </div>
+    <button class="btn" style="margin-top:12px">Simpan pola siklus</button>
+  </form>
+</div>
+
+<div class="card" style="margin-top:14px">
   <div class="card-head"><div><h3>Kategori &amp; target</h3><div class="sub">{{ $kategori->count() }} kategori · ubah di Master Kategori</div></div><div class="right"><a class="link" href="/master-kategori">Buka →</a></div></div>
   <div class="table-wrap"><table>
     <thead><tr><th>Kategori</th><th class="num">AKG energi</th><th class="num">AKG protein</th><th class="num">Target energi</th><th class="num">Target protein</th></tr></thead>
@@ -82,5 +113,27 @@
     </tbody>
   </table></div>
 </div>
+
+
+<script>
+(() => {
+  const pola = document.getElementById('pola-sel');
+  const panjang = document.getElementById('panjang-sel');
+  if (!pola || !panjang) return;
+  const sync = () => {
+    const p = pola.value;
+    let first = null;
+    [...panjang.options].forEach(o => {
+      const cocok = o.dataset.pola === p;
+      o.hidden = !cocok;
+      o.disabled = !cocok;
+      if (cocok && !first) first = o;
+    });
+    if (panjang.selectedOptions[0]?.disabled && first) panjang.value = first.value;
+  };
+  pola.addEventListener('change', sync);
+  sync();
+})();
+</script>
 
 @endsection

@@ -35,10 +35,8 @@ class Nutrition
 
     public static function menu(int $hari, ?int $siklusId = null)
     {
-        $q = DB::table('menu_hari')->where('hari', $hari);
-        if ($siklusId) {
-            $q->where('siklus_id', $siklusId);
-        }
+        $siklusId = $siklusId ?: (int) Siklus::aktif()->id;
+        $q = DB::table('menu_hari')->where('hari', $hari)->where('siklus_id', $siklusId);
         $mh = $q->first();
         if (! $mh) {
             return collect();
@@ -72,6 +70,7 @@ class Nutrition
      */
     public static function komposisi(int $kategoriId, int $hari, ?int $siklusId = null): array
     {
+        $siklusId = $siklusId ?: (int) Siklus::aktif()->id;
         $versi = (int) Cache::get('mbg.cache_version', 1);
         $key = "nutrisi:v{$versi}:k{$kategoriId}:h{$hari}:s".($siklusId ?? 0);
         $cached = Cache::get($key);

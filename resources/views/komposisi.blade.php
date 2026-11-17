@@ -19,7 +19,7 @@
     @foreach($kategori as $k)<option value="{{ $k->id }}" @selected($k->id == $kat->id)>{{ $k->nama }}</option>@endforeach
   </select>
   <select name="hari" onchange="this.form.submit()">
-    @for($h = 1; $h <= 12; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
+    @for($h = 1; $h <= $jumlah; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
   </select>
 </form>
 

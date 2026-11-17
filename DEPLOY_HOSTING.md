@@ -57,7 +57,7 @@ Lalu:
 composer install --no-dev --optimize-autoloader
 php artisan key:generate        # hanya bila APP_KEY belum ada
 php artisan migrate --force
-php artisan db:seed --force     # ReferenceSeeder + MbgSeeder + UserSeeder
+php artisan db:seed --force     # ReferenceSeeder + MbgSeeder + CycleSeeder + UserSeeder
 php artisan mbg:import-tkpi     # 1.021 bahan dari database/data/tkpi.csv
 php artisan mbg:isi-harga       # isi harga bahan yang masih 0 dari harga acuan
 php artisan storage:link        # agar logo SPPG tampil
@@ -69,6 +69,15 @@ dipakai, boleh dilewati — tetapi `ReferenceSeeder` (DBMP 50 bahan + 32 harga a
 ```bash
 php artisan db:seed --class=ReferenceSeeder --force
 ```
+
+Untuk instalasi yang **sudah berjalan** dan baru menerima fitur siklus 5/10, cukup jalankan seeder siklus
+(idempoten; menu yang sudah diedit tidak ditimpa):
+
+```bash
+php artisan db:seed --class=CycleSeeder --force
+```
+
+Seeder ini menambahkan pengaturan `pola_siklus=5/10` dan `panjang_siklus=10`, serta siklus 5, 10, dan 12 hari.
 
 ## 4b. Harga pasar otomatis
 

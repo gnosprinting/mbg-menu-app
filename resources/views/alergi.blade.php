@@ -16,7 +16,7 @@
       <form method="get" action="/alergi">
         <input type="hidden" name="tab" value="periksa">
         <select name="hari" onchange="this.form.submit()" style="border:1px solid var(--line);border-radius:10px;padding:7px 10px;font:inherit;font-size:11.8px;background:#fff">
-          @for($h = 1; $h <= 12; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
+          @for($h = 1; $h <= $jumlah; $h++)<option value="{{ $h }}" @selected($h == $hari)>Hari {{ $h }}</option>@endfor
         </select>
       </form>
     @endif
@@ -166,7 +166,7 @@
   </div>
 
   <div class="card" style="margin-top:14px">
-    <div class="card-head"><div><h3>Pemeriksaan menu preeklampsia — 6 hari</h3><div class="sub">Dihitung dari komposisi menu yang berlaku</div></div><div class="right"><a class="link" href="/komposisi?kategori={{ $pre->id ?? '' }}">Lihat komposisi →</a></div></div>
+    <div class="card-head"><div><h3>Pemeriksaan menu preeklampsia — {{ $jumlah }} hari</h3><div class="sub">Dihitung dari komposisi menu yang berlaku</div></div><div class="right"><a class="link" href="/komposisi?kategori={{ $pre->id ?? '' }}">Lihat komposisi →</a></div></div>
     <div class="table-wrap"><table>
       <thead><tr><th>Hari</th><th>Menu</th><th class="num">Energi</th><th class="num">Natrium</th><th>Status</th></tr></thead>
       <tbody>

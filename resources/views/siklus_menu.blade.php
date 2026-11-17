@@ -9,11 +9,12 @@
 @if(session('galat'))<div class="alert bad">⚠ {{ session('galat') }}</div>@endif
 
 <div class="page-top">
-  <div><h1>Siklus Menu</h1><p>{{ $siklus->nama }} · versi {{ $siklus->versi }} · tampil {{ $jumlah }} hari</p></div>
+  <div><h1>Siklus Menu</h1><p>{{ $siklus->nama }} · pola {{ $pola }} · tampil {{ $jumlah }} hari</p></div>
   <div class="actions">
     <div class="seg">
-      <a class="{{ $jumlah == 6 ? 'on' : '' }}" href="/siklus?hari=6">6 hari</a>
-      <a class="{{ $jumlah == 12 ? 'on' : '' }}" href="/siklus?hari=12">12 hari</a>
+      @foreach($opsi as $o)
+        <a class="{{ $jumlah == $o ? 'on' : '' }}" href="/siklus?hari={{ $o }}">{{ $o }} hari</a>
+      @endforeach
     </div>
     <button class="btn" onclick="document.getElementById('form-menu').scrollIntoView({behavior:'smooth'})">+ Tambah menu</button>
   </div>
@@ -58,7 +59,9 @@
         @empty
           <tr><td colspan="10" class="empty">Belum ada menu pada rentang ini.</td></tr>
         @endforelse
-        @for($h = $menu->count() + 1; $h <= $jumlah; $h++)
+        @php $terisi = $menu->pluck('hari')->all(); @endphp
+        @for($h = 1; $h <= $jumlah; $h++)
+          @continue(in_array($h, $terisi))
           <tr><td class="strong">{{ $h }}</td><td class="muted">—</td><td colspan="7" class="muted">Belum diisi</td><td><span class="chip orange">Belum</span></td></tr>
         @endfor
       </tbody>
@@ -71,7 +74,12 @@
       <form method="post" action="/menu">
         @csrf
         <div class="formgrid" style="grid-template-columns:1fr 1fr">
-          <label class="field">Hari ke<input type="number" name="hari" min="1" max="12" value="{{ min(12, $menu->count() + 1) }}" required></label>
+          @php
+            $terisiMenu = $menu->pluck('hari')->all();
+            $hariBerikut = 1;
+            while (in_array($hariBerikut, $terisiMenu)) { $hariBerikut++; }
+          @endphp
+          <label class="field">Hari ke<input type="number" name="hari" min="1" max="{{ $jumlah }}" value="{{ min($jumlah, $hariBerikut) }}" required></label>
           <label class="field">Tanggal<input type="date" name="tanggal" value="{{ now()->toDateString() }}"></label>
         </div>
         <label class="field" style="margin-top:8px">Nama menu<input name="nama" placeholder="mis. Ayam kecap" required></label>
