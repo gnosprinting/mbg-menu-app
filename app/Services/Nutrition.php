@@ -64,6 +64,22 @@ class Nutrition
             ]);
     }
 
+    /** Bahan tambahan 3B untuk satu menu hari dan satu kategori. */
+    private static function tambahan(int $menuHariId, int $kategoriId)
+    {
+        return DB::table('menu_tambahan as mt')
+            ->join('bahan as b', 'b.id', '=', 'mt.bahan_id')
+            ->where('mt.menu_hari_id', $menuHariId)
+            ->where('mt.kategori_id', $kategoriId)
+            ->orderBy('mt.id')
+            ->get([
+                'mt.id', 'mt.gram', 'mt.metode', 'mt.catatan',
+                'b.nama', 'b.kelompok', 'b.sp_label', 'b.urt_label',
+                'b.energi', 'b.protein', 'b.lemak', 'b.kh', 'b.natrium',
+                'b.serat', 'b.vit_a', 'b.vit_b', 'b.bdd', 'b.harga', 'b.satuan',
+            ]);
+    }
+
     /**
      * Hitung komposisi satu kategori untuk satu hari.
      * Gram menu disimpan untuk profil basis (SD 1–3), lalu diskalakan per peran.
@@ -84,6 +100,7 @@ class Nutrition
         $base = self::baseProfile();
         $prof = self::profile($kategoriId);
         $target = self::target($kategoriId);
+        $menuHari = DB::table('menu_hari')->where('siklus_id', $siklusId)->where('hari', $hari)->first();
         $rows = [];
         $t = ['gram' => 0, 'energi' => 0, 'protein' => 0, 'lemak' => 0, 'kh' => 0, 'natrium' => 0, 'serat' => 0, 'vit_a' => 0, 'vit_b' => 0];
 
@@ -113,6 +130,34 @@ class Nutrition
             $t['gram'] += $gram; $t['energi'] += $e; $t['protein'] += $p;
             $t['lemak'] += $l; $t['kh'] += $k; $t['natrium'] += $na; $t['serat'] += $fi;
             $t['vit_a'] += $va; $t['vit_b'] += $vb;
+        }
+
+        // Tambahan 3B tidak ikut diskalakan: gram sudah ditetapkan per kategori.
+        if ($menuHari) {
+            foreach (self::tambahan($menuHari->id, $kategoriId) as $s) {
+                $gram = (float) $s->gram;
+                $e = $gram / 100 * (float) $s->energi;
+                $p = $gram / 100 * (float) $s->protein;
+                $l = $gram / 100 * (float) $s->lemak;
+                $k = $gram / 100 * (float) $s->kh;
+                $na = $gram / 100 * (float) $s->natrium;
+                $fi = $gram / 100 * (float) $s->serat;
+                $va = $gram / 100 * (float) ($s->vit_a ?? 0);
+                $vb = $gram / 100 * (float) ($s->vit_b ?? 0);
+
+                $rows[] = [
+                    'nama' => $s->nama, 'kelompok' => $s->kelompok, 'peran' => 'tambahan',
+                    'sp' => $s->sp_label, 'urt' => $s->urt_label, 'gram' => $gram,
+                    'energi' => $e, 'protein' => $p, 'lemak' => $l, 'kh' => $k, 'natrium' => $na,
+                    'serat' => $fi, 'vit_a' => $va, 'vit_b' => $vb,
+                    'bdd' => (float) ($s->bdd ?? 100), 'harga' => (int) ($s->harga ?? 0),
+                    'satuan' => $s->satuan ?? 'kg', 'metode' => $s->metode, 'catatan' => $s->catatan,
+                ];
+
+                $t['gram'] += $gram; $t['energi'] += $e; $t['protein'] += $p;
+                $t['lemak'] += $l; $t['kh'] += $k; $t['natrium'] += $na; $t['serat'] += $fi;
+                $t['vit_a'] += $va; $t['vit_b'] += $vb;
+            }
         }
 
         $pct = fn ($v, $tgt) => $tgt > 0 ? $v / $tgt * 100 : 0;

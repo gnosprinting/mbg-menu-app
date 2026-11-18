@@ -179,6 +179,55 @@ class ActionController extends Controller
         return back()->with('ok', 'PM alergi ditambahkan.');
     }
 
+    public function storeTambahan3b(Request $r)
+    {
+        $data = $r->validate([
+            'menu_hari_id' => 'required|integer|exists:menu_hari,id',
+            'kategori_id' => 'required|integer|exists:kategori,id',
+            'bahan_id' => 'required|integer|exists:bahan,id',
+            'gram' => 'required|numeric|min:0.1|max:5000',
+            'metode' => 'nullable|string|max:60',
+            'catatan' => 'nullable|string|max:120',
+        ]);
+
+        $kode = DB::table('kategori')->where('id', $data['kategori_id'])->value('kode');
+        if (! in_array($kode, ['HAMIL', 'MENYUSUI', 'PRE'], true)) {
+            return back()->with('galat', 'Tambahan 3B hanya untuk Ibu Hamil, Ibu Menyusui, dan Preeklampsia.');
+        }
+
+        $menu = DB::table('menu_hari')->where('id', $data['menu_hari_id'])->first();
+        if (! $menu || (int) $menu->siklus_id !== (int) Siklus::aktif()->id) {
+            return back()->with('galat', 'Menu tidak termasuk siklus yang sedang aktif.');
+        }
+
+        $kunci = [
+            'menu_hari_id' => $data['menu_hari_id'],
+            'kategori_id' => $data['kategori_id'],
+            'bahan_id' => $data['bahan_id'],
+        ];
+        $nilai = [
+            'gram' => $data['gram'],
+            'metode' => $data['metode'] ?? null,
+            'catatan' => $data['catatan'] ?? null,
+            'updated_at' => now(),
+        ];
+
+        if (DB::table('menu_tambahan')->where($kunci)->exists()) {
+            DB::table('menu_tambahan')->where($kunci)->update($nilai);
+        } else {
+            DB::table('menu_tambahan')->insert($kunci + $nilai + ['created_at' => now()]);
+        }
+
+        return back()->with('ok', 'Tambahan 3B disimpan.');
+    }
+
+    public function deleteTambahan3b(int $id)
+    {
+        $hapus = DB::table('menu_tambahan')->where('id', $id)->delete();
+
+        return back()->with($hapus ? 'ok' : 'galat', $hapus ? 'Tambahan 3B dihapus.' : 'Tambahan 3B tidak ditemukan.');
+    }
+
     public function updatePengaturan(Request $r)
     {
         foreach ($r->except('_token') as $k => $v) {

@@ -160,8 +160,21 @@ class PageController extends Controller
         $profiles = $this->profiles();
         $kategori = $this->kategoriList();
         $base = $this->profiles()[$sd->id];
+        $kategori3b = DB::table('kategori')->whereIn('kode', ['HAMIL', 'MENYUSUI', 'PRE'])
+            ->orderBy('urutan')->get();
+        $tambahan = DB::table('menu_tambahan as mt')
+            ->join('menu_hari as mh', 'mh.id', '=', 'mt.menu_hari_id')
+            ->join('kategori as k', 'k.id', '=', 'mt.kategori_id')
+            ->join('bahan as b', 'b.id', '=', 'mt.bahan_id')
+            ->where('mh.siklus_id', $siklus->id)
+            ->where('mh.hari', '<=', $jumlah)
+            ->whereIn('mt.kategori_id', $kategori3b->pluck('id')->all())
+            ->orderBy('mh.hari')->orderBy('k.urutan')->orderBy('b.nama')
+            ->get(['mt.id', 'mt.menu_hari_id', 'mh.hari', 'mt.gram', 'mt.metode', 'mt.catatan',
+                'k.id as kategori_id', 'k.kode', 'k.nama as kategori',
+                'b.id as bahan_id', 'b.nama as bahan', 'b.satuan']);
 
-        return view('siklus_menu', compact('siklus', 'menu', 'bahan', 'jumlah', 'opsi', 'pola', 'profiles', 'kategori', 'base'));
+        return view('siklus_menu', compact('siklus', 'menu', 'bahan', 'jumlah', 'opsi', 'pola', 'profiles', 'kategori', 'base', 'kategori3b', 'tambahan'));
     }
 
     public function siklusDetail(int $id)
@@ -173,8 +186,14 @@ class PageController extends Controller
             ->get(['mb.id', 'mb.gram', 'mb.peran', 'b.nama', 'b.kelompok', 'b.energi', 'b.protein']);
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
         $komp = Nutrition::komposisi($sd->id, $m->hari, $m->siklus_id);
+        $tambahan = DB::table('menu_tambahan as mt')
+            ->join('kategori as k', 'k.id', '=', 'mt.kategori_id')
+            ->join('bahan as b', 'b.id', '=', 'mt.bahan_id')
+            ->where('mt.menu_hari_id', $id)
+            ->orderBy('k.urutan')->orderBy('b.nama')
+            ->get(['mt.id', 'mt.gram', 'mt.metode', 'mt.catatan', 'k.nama as kategori', 'b.nama as bahan', 'b.satuan']);
 
-        return view('siklus_detail', compact('m', 'items', 'komp', 'sd'));
+        return view('siklus_detail', compact('m', 'items', 'komp', 'sd', 'tambahan'));
     }
 
     public function komposisi(Request $r)
@@ -273,13 +292,17 @@ class PageController extends Controller
             return [];
         }
         $bahanIds = DB::table('menu_bahan')->where('menu_hari_id', $mh->id)->pluck('bahan_id');
-        $alergenBahan = DB::table('alergen_bahan')->whereIn('bahan_id', $bahanIds)
-            ->join('alergen as a', 'a.id', '=', 'alergen_bahan.alergen_id')
-            ->join('bahan as b', 'b.id', '=', 'alergen_bahan.bahan_id')
-            ->get(['a.id as alergen_id', 'a.nama as alergen', 'b.nama as bahan']);
 
         $hasil = [];
         foreach (DB::table('pm_alergi')->get() as $p) {
+            $bahanPm = $bahanIds->merge(
+                DB::table('menu_tambahan')->where('menu_hari_id', $mh->id)
+                    ->where('kategori_id', $p->kategori_id)->pluck('bahan_id')
+            );
+            $alergenBahan = DB::table('alergen_bahan')->whereIn('bahan_id', $bahanPm)
+                ->join('alergen as a', 'a.id', '=', 'alergen_bahan.alergen_id')
+                ->join('bahan as b', 'b.id', '=', 'alergen_bahan.bahan_id')
+                ->get(['a.id as alergen_id', 'a.nama as alergen', 'b.nama as bahan']);
             $alergenPm = DB::table('alergen_pm')->where('pm_alergi_id', $p->id)->pluck('alergen_id');
             $bentrok = $alergenBahan->whereIn('alergen_id', $alergenPm);
             if ($bentrok->isNotEmpty()) {

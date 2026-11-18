@@ -2,7 +2,7 @@
 @section('title','Komposisi & Gizi')
 @section('content')
 @php
-  $warna = ['Pokok'=>'#C58A12','Hewani'=>'#FF5C6C','Nabati'=>'#7B4DFF','Sayur'=>'#12B981','Buah'=>'#FF63B0','Minyak'=>'#FFB020','Bumbu'=>'#78819C'];
+  $warna = ['Pokok'=>'#C58A12','Hewani'=>'#FF5C6C','Nabati'=>'#7B4DFF','Sayur'=>'#12B981','Buah'=>'#FF63B0','Minyak'=>'#FFB020','Bumbu'=>'#78819C','Tambahan 3B'=>'#0EA5E9'];
   $fmt = fn ($v, $d = 1) => number_format((float) $v, $d, ',', '.');
 @endphp
 
@@ -43,12 +43,12 @@
         @forelse($data['rows'] as $r)
           <tr style="box-shadow:inset 4px 0 0 {{ $warna[$r['kelompok']] ?? '#78819C' }}">
             @php
-              $labelPeran = ['pokok'=>'Pokok','hewani'=>'Hewani','nabati'=>'Nabati','sayur'=>'Sayur','buah'=>'Buah','minyak'=>'Minyak','bumbu'=>'Bumbu'][$r['peran']] ?? ucfirst($r['peran']);
+              $labelPeran = ['pokok'=>'Pokok','hewani'=>'Hewani','nabati'=>'Nabati','sayur'=>'Sayur','buah'=>'Buah','minyak'=>'Minyak','bumbu'=>'Bumbu','tambahan'=>'Tambahan 3B'][$r['peran']] ?? ucfirst($r['peran']);
               $warnaPeran = $warna[$labelPeran] ?? '#78819C';
             @endphp
             <td><span class="chip" style="background:{{ $warnaPeran }}1A;color:{{ $warnaPeran }}">{{ $labelPeran }}</span></td>
             <td>{{ $r['sp'] ?? '—' }}</td>
-            <td>{{ $r['nama'] }}</td>
+            <td>{{ $r['nama'] }}@if(!empty($r['catatan']))<div class="sub">{{ $r['catatan'] }}</div>@endif</td>
             <td>{{ $r['urt'] ?? '—' }}</td>
             <td class="num">{{ $fmt($r['gram']) }}</td>
             <td class="num">{{ $fmt($r['energi'], 0) }}</td>

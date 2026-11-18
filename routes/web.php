@@ -50,6 +50,8 @@ Route::middleware('auth')->group(function () {
         Route::post('/bahan', [ActionController::class, 'storeBahan'])->name('bahan.store');
         Route::post('/menu', [ActionController::class, 'storeMenu'])->name('menu.store');
         Route::post('/menu-bahan', [ActionController::class, 'storeMenuBahan'])->name('menu-bahan.store');
+        Route::post('/menu-tambahan-3b', [ActionController::class, 'storeTambahan3b'])->name('menu-tambahan.store');
+        Route::post('/menu-tambahan-3b/{id}/hapus', [ActionController::class, 'deleteTambahan3b'])->name('menu-tambahan.delete');
         Route::post('/pm-alergi', [ActionController::class, 'storePmAlergi'])->name('pm.store');
         Route::post('/pengaturan', [ActionController::class, 'updatePengaturan'])->name('pengaturan.update');
         Route::post('/pengaturan/siklus', [ActionController::class, 'updateSiklus'])->name('pengaturan.siklus');

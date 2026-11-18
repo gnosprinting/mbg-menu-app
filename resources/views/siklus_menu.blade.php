@@ -49,7 +49,16 @@
           <tr>
             <td class="strong">{{ $m->hari }}</td>
             <td>{{ $m->tanggal ? \Illuminate\Support\Carbon::parse($m->tanggal)->format('d M Y') : '—' }}</td>
-            <td class="strong">{{ $m->nama }}</td>
+            <td class="strong">{{ $m->nama }}
+              @php $tamHari = $tambahan->where('menu_hari_id', $m->id); @endphp
+              @if($tamHari->count())
+                <div style="margin-top:3px;display:flex;flex-direction:column;gap:1px">
+                  @foreach($tamHari->groupBy('kategori_id') as $g)
+                    <span style="font-size:9.5px;color:#5B2BE0;line-height:1.35">+ {{ $g->first()->kode === 'PRE' ? 'Preeklampsia' : ($g->first()->kode === 'HAMIL' ? 'Hamil' : 'Menyusui') }}: {{ $g->pluck('bahan')->implode(', ') }}</span>
+                  @endforeach
+                </div>
+              @endif
+            </td>
             @foreach(['pokok','hewani','nabati','sayur','buah'] as $peran)
               <td>{{ $m->items->where('peran', $peran)->pluck('nama')->implode(', ') ?: '—' }}</td>
             @endforeach
@@ -128,6 +137,59 @@
         </div>
         <button class="btn" style="width:100%;justify-content:center;margin-top:12px">Tambah bahan</button>
       </form>
+    </div>
+
+    <div class="card" style="margin-top:14px" id="form-3b">
+      <div class="card-head"><div><h3>Tambahan 3B</h3><div class="sub">Hamil · Menyusui · Preeklampsia — masuk hitungan gizi, belanja, dan alergi</div></div></div>
+      <form method="post" action="/menu-tambahan-3b">
+        @csrf
+        <label class="field">Menu
+          <select name="menu_hari_id" required data-search data-placeholder="Cari menu…">
+            @foreach($menu as $m)<option value="{{ $m->id }}">Hari {{ $m->hari }} · {{ $m->nama }}</option>@endforeach
+          </select>
+        </label>
+        <div class="formgrid" style="grid-template-columns:1fr 1fr;margin-top:8px">
+          <label class="field">Kategori 3B
+            <select name="kategori_id" required>
+              @foreach($kategori3b as $k)<option value="{{ $k->id }}">{{ $k->nama }}</option>@endforeach
+            </select>
+          </label>
+          <label class="field">Gram
+            <input type="number" step="0.1" min="0.1" name="gram" value="55" required>
+          </label>
+        </div>
+        <label class="field" style="margin-top:8px">Bahan tambahan
+          <select name="bahan_id" required data-search data-placeholder="Cari bahan (mis. telur, ikan)…">
+            @foreach($bahan as $b)<option value="{{ $b->id }}">{{ $b->nama }}{{ $b->mentah ? '' : ' (olahan)' }}</option>@endforeach
+          </select>
+        </label>
+        <div class="formgrid" style="grid-template-columns:1fr 1fr;margin-top:8px">
+          <label class="field">Metode<input name="metode" placeholder="rebus / kukus"></label>
+          <label class="field">Catatan<input name="catatan" placeholder="mis. tanpa garam"></label>
+        </div>
+        <div class="footnote" style="margin-top:8px">Untuk preeklampsia, tulis “tanpa garam” di catatan. Tambahan ini hanya dihitung untuk kategori yang dipilih.</div>
+        <button class="btn" style="width:100%;justify-content:center;margin-top:12px">Tambah tambahan 3B</button>
+      </form>
+
+      @if($tambahan->count())
+        <div class="table-wrap" style="margin-top:10px;max-height:220px;overflow:auto">
+          <table>
+            <thead><tr><th>Hari</th><th>Kategori</th><th>Bahan</th><th class="num">Gram</th><th>Metode</th><th>Aksi</th></tr></thead>
+            <tbody>
+              @foreach($tambahan as $t)
+                <tr>
+                  <td class="strong">H{{ $t->hari }}</td>
+                  <td>{{ $t->kategori }}</td>
+                  <td>{{ $t->bahan }}</td>
+                  <td class="num">{{ rtrim(rtrim(number_format($t->gram, 1, ',', '.'), '0'), ',') }} g</td>
+                  <td>{{ $t->metode ?: '—' }}@if($t->catatan)<div class="sub">{{ $t->catatan }}</div>@endif</td>
+                  <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" :confirm="'Hapus tambahan '.$t->bahan.' untuk '.$t->kategori.'?'" /></td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      @endif
     </div>
   </div>
 </div>

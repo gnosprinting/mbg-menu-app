@@ -53,4 +53,24 @@
   </div>
 </div>
 
+@if($tambahan->count())
+  <div class="card" style="margin-top:14px">
+    <div class="card-head"><div><h3>Tambahan 3B pada menu ini</h3><div class="sub">Dihitung hanya untuk kategori yang dipilih</div></div><div class="right"><span class="chip violet">{{ $tambahan->count() }} tambahan</span></div></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Kategori</th><th>Bahan</th><th class="num">Gram</th><th>Metode / catatan</th><th>Aksi</th></tr></thead>
+      <tbody>
+        @foreach($tambahan as $t)
+          <tr>
+            <td>{{ $t->kategori }}</td>
+            <td class="strong">{{ $t->bahan }}</td>
+            <td class="num">{{ number_format($t->gram, 1, ',', '.') }} g</td>
+            <td>{{ $t->metode ?: '—' }}@if($t->catatan)<div class="sub">{{ $t->catatan }}</div>@endif</td>
+            <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" confirm="Hapus tambahan ini?" /></td>
+          </tr>
+        @endforeach
+      </tbody>
+    </table></div>
+  </div>
+@endif
+
 @endsection
