@@ -2,6 +2,7 @@
 @section('title','Sisa Makanan')
 @section('content')
 @php
+  $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
   $num = fn ($v) => number_format((float) $v, 1, ',', '.');
   $warna = ['Karbohidrat'=>'#C58A12','Protein hewani'=>'#FF5C6C','Protein nabati'=>'#7B4DFF','Sayur'=>'#12B981','Buah'=>'#FF63B0','Lainnya'=>'#78819C'];
 @endphp
@@ -42,6 +43,7 @@
 
 @if(session('ok'))<div class="alert ok">✓ {{ session('ok') }}</div>@endif
 
+@if($boleh('sisa.tulis'))
 <div class="card" style="margin-top:14px">
   <div class="card-head"><div><h3>Catat sisa</h3><div class="sub">Menimpa baris kelompok yang sama pada tanggal itu</div></div></div>
   <form method="post" action="/sisa" data-offline>
@@ -59,5 +61,6 @@
     </div>
   </form>
 </div>
+@endif
 
 @endsection

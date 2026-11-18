@@ -40,8 +40,8 @@
           <td class="num">{{ $b->harga ? number_format($b->harga, 0, ',', '.') : '—' }}</td>
           <td><div class="act-row">
             <x-act type="view" :href="'/master-bahan/'.$b->id" />
-            <x-act type="edit" :href="'/master-bahan/'.$b->id" />
-            <x-act type="delete" :action="'/bahan/'.$b->id.'/hapus'" :disabled="$b->dipakai > 0" :title="$b->dipakai > 0 ? 'Dipakai di '.$b->dipakai.' baris menu' : 'Hapus'" confirm="Hapus bahan ini? Riwayat periodenya ikut terhapus." />
+            <x-act type="edit" :href="'/master-bahan/'.$b->id" fitur="master.tulis" />
+            <x-act type="delete" :action="'/bahan/'.$b->id.'/hapus'" :disabled="$b->dipakai > 0" :title="$b->dipakai > 0 ? 'Dipakai di '.$b->dipakai.' baris menu' : 'Hapus'" confirm="Hapus bahan ini? Riwayat periodenya ikut terhapus." fitur="master.tulis" />
           </div></td>
         </tr>
       @empty

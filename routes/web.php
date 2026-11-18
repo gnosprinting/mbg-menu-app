@@ -22,17 +22,17 @@ Route::middleware('auth')->group(function () {
     Route::get('/stok', [PageController::class, 'stok'])->name('stok');
     Route::get('/haccp', [PageController::class, 'haccp'])->name('haccp');
     Route::get('/sisa', [PageController::class, 'sisa'])->name('sisa');
-    Route::get('/master-penerima', [PageController::class, 'masterPenerima'])->name('master-penerima');
-    Route::get('/master-penerima/{id}', [PageController::class, 'penerimaDetail'])->name('penerima.detail');
-    Route::get('/master-bahan', [PageController::class, 'masterBahan'])->name('master-bahan');
-    Route::get('/master-bahan/{id}', [PageController::class, 'bahanDetail'])->name('bahan.detail');
-    Route::get('/master-kategori', [PageController::class, 'masterKategori'])->name('master-kategori');
-    Route::get('/master-alergen', [PageController::class, 'masterAlergen'])->name('master-alergen');
-    Route::get('/sumber', [PageController::class, 'sumber'])->name('sumber');
+    Route::get('/master-penerima', [PageController::class, 'masterPenerima'])->middleware('peran:admin,gizi')->name('master-penerima');
+    Route::get('/master-penerima/{id}', [PageController::class, 'penerimaDetail'])->middleware('peran:admin,gizi')->name('penerima.detail');
+    Route::get('/master-bahan', [PageController::class, 'masterBahan'])->middleware('peran:admin,gizi')->name('master-bahan');
+    Route::get('/master-bahan/{id}', [PageController::class, 'bahanDetail'])->middleware('peran:admin,gizi')->name('bahan.detail');
+    Route::get('/master-kategori', [PageController::class, 'masterKategori'])->middleware('peran:admin,gizi')->name('master-kategori');
+    Route::get('/master-alergen', [PageController::class, 'masterAlergen'])->middleware('peran:admin,gizi')->name('master-alergen');
+    Route::get('/sumber', [PageController::class, 'sumber'])->middleware('peran:admin,gizi')->name('sumber');
     Route::get('/laporan', [PageController::class, 'laporan'])->name('laporan');
     Route::get('/pengguna', [PageController::class, 'pengguna'])->middleware('peran:admin')->name('pengguna');
     Route::get('/pengguna/{id}', [PageController::class, 'penggunaDetail'])->middleware('peran:admin')->name('pengguna.detail');
-    Route::get('/pengaturan', [PageController::class, 'pengaturan'])->name('pengaturan');
+    Route::get('/pengaturan', [PageController::class, 'pengaturan'])->middleware('peran:admin,gizi')->name('pengaturan');
     Route::get('/audit', [PageController::class, 'audit'])->middleware('peran:admin,akuntan')->name('audit');
 
     // ekspor nyata (PDF & Excel dari database)

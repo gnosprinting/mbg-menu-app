@@ -33,8 +33,8 @@
             <td class="num">{{ $l->alergi }}</td>
             <td><div class="act-row">
               <x-act type="view" :href="'/master-penerima/'.$b->id" />
-              <x-act type="edit" :href="'/master-penerima/'.$b->id" />
-              <x-act type="delete" :action="'/penerima-kategori/'.$b->id.'/hapus'" confirm="Hapus baris penerima ini?" />
+              <x-act type="edit" :href="'/master-penerima/'.$b->id" fitur="master.tulis" />
+              <x-act type="delete" :action="'/penerima-kategori/'.$b->id.'/hapus'" confirm="Hapus baris penerima ini?" fitur="master.tulis" />
             </div></td>
           </tr>
         @empty

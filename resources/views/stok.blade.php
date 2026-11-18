@@ -1,14 +1,15 @@
 @extends('layouts.shell')
 @section('title','Stok')
 @section('content')
-@php $num = fn ($v) => rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ','); @endphp
+@php $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
+  $num = fn ($v) => rtrim(rtrim(number_format((float) $v, 2, ',', '.'), '0'), ','); @endphp
 
 @if(session('ok'))<div class="alert ok">✓ {{ session('ok') }}</div>@endif
 @if(session('galat'))<div class="alert bad">⚠ {{ session('galat') }}</div>@endif
 
 <div class="page-top">
   <div><h1>Stok</h1><p>Dipotong otomatis dari menu hari 3 · {{ $penerima['total'] }} porsi · PO dari selisih kebutuhan</p></div>
-  <div class="actions"><button class="btn ghost">Unduh laporan</button><button class="btn" onclick="document.getElementById('form-mutasi').scrollIntoView({behavior:'smooth'})">+ Mutasi stok</button></div>
+  <div class="actions"><button class="btn ghost">Unduh laporan</button>@if($boleh('stok.tulis'))<button class="btn" onclick="document.getElementById('form-mutasi').scrollIntoView({behavior:'smooth'})">+ Mutasi stok</button>@endif</div>
 </div>
 
 <div class="kpis">
@@ -21,10 +22,12 @@
 <div class="card">
   <div class="card-head"><div><h3>Stok bahan</h3><div class="sub">Sisa dihitung setelah pemakaian menu hari ini</div></div>
     <div class="right">
+      @if($boleh('po.buat'))
       <form method="post" action="/po" style="margin:0">
         @csrf
         <button class="btn sm">Buat PO</button>
       </form>
+      @endif
     </div>
   </div>
   <div class="table-wrap"><table>
@@ -51,7 +54,8 @@
   <div class="footnote">Sisa negatif berarti stok tidak cukup untuk menu hari ini — aplikasi mengusulkan PO dari selisih tersebut.</div>
 </div>
 
-<div class="grid g-2" style="margin-top:14px">
+<div class="grid {{ $boleh('stok.tulis') ? 'g-2' : '' }}" style="margin-top:14px">
+  @if($boleh('stok.tulis'))
   <div class="card" id="form-mutasi">
     <div class="card-head"><div><h3>Catat mutasi</h3><div class="sub">Masuk, keluar, atau opname</div></div></div>
     <form method="post" action="/stok/mutasi">
@@ -71,6 +75,7 @@
       <button class="btn" style="width:100%;justify-content:center;margin-top:12px">Simpan mutasi</button>
     </form>
   </div>
+  @endif
 
   <div class="card">
     <div class="card-head"><div><h3>Mutasi terakhir</h3><div class="sub">8 transaksi</div></div></div>
@@ -93,6 +98,7 @@
   </div>
 </div>
 
+@if($boleh('po.buat'))
 <div class="card" style="margin-top:14px" id="po-manual">
   <div class="card-head"><div><h3>PO manual — nilai bisa diubah</h3><div class="sub">Nama, qty, satuan, dan harga bebas diisi; pilih item stok untuk mengisi otomatis</div></div></div>
   <form method="post" action="/po/manual">
@@ -127,6 +133,7 @@
   </form>
   <div class="footnote">Baris kosong diabaikan. Harga yang diisi di sini tidak mengubah harga master bahan.</div>
 </div>
+@endif
 
 <script>
   (function () {

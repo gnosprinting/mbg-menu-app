@@ -3,6 +3,7 @@
 @section('content')
 @php
   $warna = ['Hewani'=>'#FF5C6C','Nabati'=>'#7B4DFF','Sayur'=>'#12B981','Buah'=>'#FF63B0'];
+  $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
 @endphp
 
 @if(session('ok'))<div class="alert ok">✓ {{ session('ok') }}</div>@endif
@@ -11,17 +12,23 @@
 <div class="page-top">
   <div><h1>Siklus Menu</h1><p>{{ $siklus->nama }} · pola {{ $pola }} · tampil {{ $jumlah }} hari</p></div>
   <div class="actions">
-    <div class="seg">
-      @foreach($opsi as $o)
-        <form method="post" action="/pengaturan/siklus" style="display:contents">
-          @csrf
-          <input type="hidden" name="pola_siklus" value="{{ $pola }}">
-          <input type="hidden" name="panjang_siklus" value="{{ $o }}">
-          <button type="submit" class="{{ $jumlah == $o ? 'on' : '' }}">{{ $o }} hari</button>
-        </form>
-      @endforeach
-    </div>
-    <button class="btn" onclick="document.getElementById('form-menu').scrollIntoView({behavior:'smooth'})">+ Tambah menu</button>
+    @if($boleh('pengaturan.tulis'))
+      <div class="seg">
+        @foreach($opsi as $o)
+          <form method="post" action="/pengaturan/siklus" style="display:contents">
+            @csrf
+            <input type="hidden" name="pola_siklus" value="{{ $pola }}">
+            <input type="hidden" name="panjang_siklus" value="{{ $o }}">
+            <button type="submit" class="{{ $jumlah == $o ? 'on' : '' }}">{{ $o }} hari</button>
+          </form>
+        @endforeach
+      </div>
+    @else
+      <span class="chip violet">{{ $jumlah }} hari</span>
+    @endif
+    @if($boleh('menu.tulis'))
+      <button class="btn" onclick="document.getElementById('form-menu').scrollIntoView({behavior:'smooth'})">+ Tambah menu</button>
+    @endif
   </div>
 </div>
 
@@ -39,7 +46,7 @@
   <span class="chip violet">{{ $menu->count() }} dari {{ $jumlah }} hari</span>
 </form>
 
-<div class="grid g-2-1">
+<div class="grid {{ $boleh('menu.tulis') ? 'g-2-1' : '' }}">
   <div class="card">
     <div class="card-head"><div><h3>Daftar menu</h3><div class="sub">Detail · ubah · hapus per hari</div></div></div>
     <div class="table-wrap"><table>
@@ -66,7 +73,7 @@
             <td>
               <div class="act-row">
                 <x-act type="view" :href="'/siklus/'.$m->id" />
-                <x-act type="delete" :action="'/menu/'.$m->id.'/hapus'" :confirm="'Hapus menu hari '.$m->hari.' beserta bahannya?'" />
+                <x-act type="delete" :action="'/menu/'.$m->id.'/hapus'" :confirm="'Hapus menu hari '.$m->hari.' beserta bahannya?'" fitur="menu.tulis" />
               </div>
             </td>
           </tr>
@@ -82,6 +89,7 @@
     </table></div>
   </div>
 
+  @if($boleh('menu.tulis'))
   <div>
     <div class="card" id="form-menu">
       <div class="card-head"><div><h3>Tambah / ubah menu</h3><div class="sub">Hari yang sama akan diperbarui</div></div></div>
@@ -183,7 +191,7 @@
                   <td>{{ $t->bahan }}</td>
                   <td class="num">{{ rtrim(rtrim(number_format($t->gram, 1, ',', '.'), '0'), ',') }} g</td>
                   <td>{{ $t->metode ?: '—' }}@if($t->catatan)<div class="sub">{{ $t->catatan }}</div>@endif</td>
-                  <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" :confirm="'Hapus tambahan '.$t->bahan.' untuk '.$t->kategori.'?'" /></td>
+                  <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" :confirm="'Hapus tambahan '.$t->bahan.' untuk '.$t->kategori.'?'" fitur="menu.tulis" /></td>
                 </tr>
               @endforeach
             </tbody>
@@ -192,6 +200,7 @@
       @endif
     </div>
   </div>
+  @endif
 </div>
 
 <script>
@@ -199,17 +208,19 @@
   const base = @json($base);
   const peranSel = document.getElementById('peran-sel');
   const gramInp = document.getElementById('gram-inp');
-  function updateGram() {
-    const p = peranSel.value;
-    gramInp.value = base[p] ?? 0;
-    document.querySelectorAll('#gram-preview td[data-kat]').forEach(td => {
-      const id = td.getAttribute('data-kat');
-      td.textContent = (profiles[id] && profiles[id][p] !== undefined) ? profiles[id][p] : 0;
-    });
-    document.getElementById('gram-note').textContent = 'Rekomendasi SD 1–3 = ' + (base[p] ?? 0) + ' g · bisa diubah manual; kategori lain mengikuti profil.';
+  if (peranSel && gramInp) {
+    const updateGram = () => {
+      const p = peranSel.value;
+      gramInp.value = base[p] ?? 0;
+      document.querySelectorAll('#gram-preview td[data-kat]').forEach(td => {
+        const id = td.getAttribute('data-kat');
+        td.textContent = (profiles[id] && profiles[id][p] !== undefined) ? profiles[id][p] : 0;
+      });
+      document.getElementById('gram-note').textContent = 'Rekomendasi SD 1–3 = ' + (base[p] ?? 0) + ' g · bisa diubah manual; kategori lain mengikuti profil.';
+    };
+    peranSel.addEventListener('change', updateGram);
+    updateGram();
   }
-  peranSel.addEventListener('change', updateGram);
-  updateGram();
 </script>
 
 @endsection

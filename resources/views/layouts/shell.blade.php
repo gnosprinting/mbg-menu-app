@@ -37,6 +37,7 @@ $I = [
  'logout'   => 'fa-arrow-right-from-bracket',
 ];
 $nav = fn ($path) => request()->is($path) ? 'on' : '';
+$boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
 @endphp
 
 <div class="app">
@@ -65,24 +66,30 @@ $nav = fn ($path) => request()->is($path) ? 'on' : '';
     <a class="nav {{ $nav('sisa') }}" href="/sisa"><i class="fa-solid {{ $I['trash'] }}"></i> Sisa Makanan</a>
 
     <div class="nav-label">Data &amp; sistem</div>
-    <a class="nav {{ $nav('master-penerima') }}" href="/master-penerima"><i class="fa-solid {{ $I['users'] }}"></i> Master Penerima</a>
-    <a class="nav {{ $nav('master-bahan') }}" href="/master-bahan"><i class="fa-solid {{ $I['leaf'] }}"></i> Master Bahan</a>
-    <a class="nav {{ $nav('master-kategori') }}" href="/master-kategori"><i class="fa-solid {{ $I['target'] }}"></i> Master Kategori</a>
-    <a class="nav {{ $nav('master-alergen') }}" href="/master-alergen"><i class="fa-solid {{ $I['alert'] }}"></i> Master Alergen</a>
-    <a class="nav {{ $nav('sumber') }}" href="/sumber"><i class="fa-solid {{ $I['file'] }}"></i> Data Sumber</a>
+    @if($boleh('master.lihat'))
+      <a class="nav {{ $nav('master-penerima') }}" href="/master-penerima"><i class="fa-solid {{ $I['users'] }}"></i> Master Penerima</a>
+      <a class="nav {{ $nav('master-bahan') }}" href="/master-bahan"><i class="fa-solid {{ $I['leaf'] }}"></i> Master Bahan</a>
+      <a class="nav {{ $nav('master-kategori') }}" href="/master-kategori"><i class="fa-solid {{ $I['target'] }}"></i> Master Kategori</a>
+      <a class="nav {{ $nav('master-alergen') }}" href="/master-alergen"><i class="fa-solid {{ $I['alert'] }}"></i> Master Alergen</a>
+      <a class="nav {{ $nav('sumber') }}" href="/sumber"><i class="fa-solid {{ $I['file'] }}"></i> Data Sumber</a>
+    @endif
     <a class="nav {{ $nav('laporan') }}" href="/laporan"><i class="fa-solid {{ $I['file'] }}"></i> Laporan</a>
-    @if(in_array(auth()->user()->peran, ['admin','akuntan']))
+    @if($boleh('audit.lihat'))
       <a class="nav {{ $nav('audit') }}" href="/audit"><i class="fa-solid fa-clipboard-list"></i> Audit Log</a>
     @endif
-    <a class="nav {{ $nav('pengguna') }}" href="/pengguna"><i class="fa-solid {{ $I['users'] }}"></i> Pengguna</a>
-    <a class="nav {{ $nav('pengaturan') }}" href="/pengaturan"><i class="fa-solid {{ $I['gear'] }}"></i> Pengaturan</a>
+    @if($boleh('pengguna.kelola'))
+      <a class="nav {{ $nav('pengguna') }}" href="/pengguna"><i class="fa-solid {{ $I['users'] }}"></i> Pengguna</a>
+    @endif
+    @if($boleh('pengaturan.lihat'))
+      <a class="nav {{ $nav('pengaturan') }}" href="/pengaturan"><i class="fa-solid {{ $I['gear'] }}"></i> Pengaturan</a>
+    @endif
 
     <div class="spacer"></div>
     <div class="profile">
       @php
         $u = auth()->user();
         $ini = collect(explode(' ', $u->name ?? 'MB'))->map(fn ($w) => mb_substr($w, 0, 1))->take(2)->implode('');
-        $role = ['admin'=>'Admin SPPG','gizi'=>'Ahli gizi','dapur'=>'Petugas dapur','pengawas'=>'Pengawas','akuntan'=>'Akuntan'][$u->peran ?? ''] ?? 'Pengguna';
+        $role = \App\Services\Akses::label($u->peran ?? null);
       @endphp
       <div class="av">{{ strtoupper($ini) }}</div>
       <div><b>{{ $u->name ?? 'Pengguna' }}</b><small>{{ $role }} · SPPG Wareg</small></div>
@@ -104,8 +111,12 @@ $nav = fn ($path) => request()->is($path) ? 'on' : '';
       <div class="right">
         <button class="icon-btn"><i class="fa-solid {{ $I['bell'] }}"></i><span class="dot"></span></button>
         <button class="icon-btn hide-sm" id="theme-btn" title="Tema gelap/terang"><i class="fa-solid fa-moon"></i></button>
-        <button class="icon-btn hide-sm"><i class="fa-solid {{ $I['gear'] }}"></i></button>
-        <a class="btn" href="/siklus"><i class="fa-solid {{ $I['plus'] }}"></i> <span class="btn-label">Buat Menu</span></a>
+        @if($boleh('pengaturan.lihat'))
+          <a class="icon-btn hide-sm" href="/pengaturan" title="Pengaturan"><i class="fa-solid {{ $I['gear'] }}"></i></a>
+        @endif
+        @if($boleh('menu.tulis'))
+          <a class="btn" href="/siklus"><i class="fa-solid {{ $I['plus'] }}"></i> <span class="btn-label">Buat Menu</span></a>
+        @endif
         <form method="post" action="/logout" style="margin:0">
           @csrf
           <button class="icon-btn" title="Keluar"><i class="fa-solid {{ $I['logout'] }}"></i></button>

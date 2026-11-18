@@ -30,7 +30,7 @@
                     <button class="btn sm" style="margin-top:8px">Simpan</button>
                   </form>
                 </details>
-                <x-act type="delete" :action="'/alergen/'.$a->id.'/hapus'" :disabled="$a->dipakai || $a->bahan" confirm="Hapus alergen ini?" title="{{ ($a->dipakai || $a->bahan) ? 'Tidak bisa dihapus: masih dipakai' : 'Hapus' }}" />
+                <x-act type="delete" :action="'/alergen/'.$a->id.'/hapus'" :disabled="$a->dipakai || $a->bahan" confirm="Hapus alergen ini?" title="{{ ($a->dipakai || $a->bahan) ? 'Tidak bisa dihapus: masih dipakai' : 'Hapus' }}" fitur="master.tulis" />
               </div>
             </td>
           </tr>

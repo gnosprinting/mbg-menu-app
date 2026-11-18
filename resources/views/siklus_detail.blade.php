@@ -1,6 +1,7 @@
 @extends('layouts.shell')
 @section('title','Detail Menu')
 @section('content')
+@php $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur); @endphp
 @if(session('ok'))<div class="alert ok">✓ {{ session('ok') }}</div>@endif
 
 <div class="page-top">
@@ -8,7 +9,7 @@
   <div class="actions"><a class="btn ghost" href="/siklus">← Kembali</a></div>
 </div>
 
-<div class="grid g-2-1">
+<div class="grid {{ $boleh('menu.tulis') ? 'g-2-1' : '' }}">
   <div class="card">
     <div class="card-head"><div><h3>Bahan pada menu</h3><div class="sub">Gram basis {{ $sd->nama }}</div></div><div class="right"><span class="chip violet">{{ $items->count() }} bahan</span></div></div>
     <div class="table-wrap"><table>
@@ -20,7 +21,7 @@
             <td>{{ ucfirst($i->peran) }}</td>
             <td class="num">{{ number_format($i->gram, 1, ',', '.') }}</td>
             <td class="num">{{ number_format($i->gram / 100 * $i->energi, 0, ',', '.') }}</td>
-            <td><x-act type="delete" :action="'/menu-bahan/'.$i->id.'/hapus'" confirm="Keluarkan bahan ini dari menu?" /></td>
+            <td><x-act type="delete" :action="'/menu-bahan/'.$i->id.'/hapus'" confirm="Keluarkan bahan ini dari menu?" fitur="menu.tulis" /></td>
           </tr>
         @empty
           <tr><td colspan="5" class="empty">Menu ini belum punya bahan.</td></tr>
@@ -30,6 +31,7 @@
     <div class="footnote">Komposisi {{ $sd->nama }}: {{ round($komp['total']['energi']) }} kkal ({{ round($komp['pct']['energi']) }}% target), protein {{ number_format($komp['total']['protein'], 1, ',', '.') }} g.</div>
   </div>
 
+  @if($boleh('menu.tulis'))
   <div>
     <div class="card">
       <div class="card-head"><div><h3>Ubah menu</h3><div class="sub">Nama, tanggal, metode</div></div></div>
@@ -51,6 +53,7 @@
       </form>
     </div>
   </div>
+  @endif
 </div>
 
 @if($tambahan->count())
@@ -65,7 +68,7 @@
             <td class="strong">{{ $t->bahan }}</td>
             <td class="num">{{ number_format($t->gram, 1, ',', '.') }} g</td>
             <td>{{ $t->metode ?: '—' }}@if($t->catatan)<div class="sub">{{ $t->catatan }}</div>@endif</td>
-            <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" confirm="Hapus tambahan ini?" /></td>
+            <td><x-act type="delete" :action="'/menu-tambahan-3b/'.$t->id.'/hapus'" confirm="Hapus tambahan ini?" fitur="menu.tulis" /></td>
           </tr>
         @endforeach
       </tbody>

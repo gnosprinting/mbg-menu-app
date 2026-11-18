@@ -54,7 +54,7 @@
                   <button class="btn sm" style="margin-top:8px">Simpan</button>
                 </form>
               </details>
-              <x-act type="delete" :action="'/kategori/'.$k->id.'/hapus'" confirm="Hapus kategori ini?" />
+              <x-act type="delete" :action="'/kategori/'.$k->id.'/hapus'" confirm="Hapus kategori ini?" fitur="master.tulis" />
             </div>
           </td>
         </tr>

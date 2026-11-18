@@ -1,4 +1,4 @@
-@props(['type' => 'view', 'href' => null, 'action' => null, 'confirm' => 'Yakin ingin melanjutkan?', 'disabled' => false, 'title' => null])
+@props(['type' => 'view', 'href' => null, 'action' => null, 'confirm' => 'Yakin ingin melanjutkan?', 'disabled' => false, 'title' => null, 'fitur' => null])
 
 @php
 $icons = [
@@ -16,6 +16,7 @@ $label = $title ?? ['view' => 'Detail', 'edit' => 'Ubah', 'delete' => 'Hapus', '
     'approve' => 'Setujui PO', 'receive' => 'Terima barang', 'reject' => 'Tolak PO'][$type];
 @endphp
 
+@if(! $fitur || \App\Services\Akses::boleh($fitur))
 @if($action)
     <form method="post" action="{{ $action }}" style="display:inline" onsubmit="return confirm('{{ $confirm }}')">
         @csrf
@@ -23,4 +24,5 @@ $label = $title ?? ['view' => 'Detail', 'edit' => 'Ubah', 'delete' => 'Hapus', '
     </form>
 @else
     <a href="{{ $href }}" class="act {{ $cls }}" title="{{ $label }}" aria-label="{{ $label }}"><i class="fa-solid {{ $icons[$type] }}"></i></a>
+@endif
 @endif

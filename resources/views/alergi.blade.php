@@ -1,7 +1,8 @@
 @extends('layouts.shell')
 @section('title','Alergi & Varian')
 @section('content')
-@php
+@php $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
+
   $terpicuIds = collect($terpicu)->pluck('id')->all();
   $rp = fn ($v) => number_format((float) $v, 0, ',', '.');
 @endphp
@@ -20,7 +21,9 @@
         </select>
       </form>
     @endif
-    <a class="btn ghost" href="/master-alergen">Master alergen</a>
+    @if($boleh('master.lihat'))
+      <a class="btn ghost" href="/master-alergen">Master alergen</a>
+    @endif
     <a class="btn ghost" href="/export/alergi.xlsx?hari={{ $hari }}">Excel</a>
     <a class="btn" href="/export/alergi.pdf?hari={{ $hari }}">Unduh laporan</a>
   </div>
@@ -76,6 +79,7 @@
     </div>
 
     <div>
+      @if($boleh('menu.tulis'))
       <div class="card">
         <div class="card-head"><div><h3>Tambah PM alergi</h3><div class="sub">Porsi mengikuti kategori PM</div></div></div>
         <form method="post" action="/pm-alergi">
@@ -114,6 +118,7 @@
         </form>
         <div class="footnote">Alergen baru bisa ditambahkan di menu Master Alergen.</div>
       </div>
+      @endif
 
       <div class="card" style="margin-top:14px">
         <div class="card-head"><div><h3>Hasil pemeriksaan</h3><div class="sub">Menu hari {{ $hari }}</div></div></div>

@@ -1,11 +1,12 @@
 @extends('layouts.shell')
 @section('title','HACCP')
 @section('content')
-@php $aman = $logs->where('status','aman')->count(); $total = max($logs->count(),1); @endphp
+@php $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
+  $aman = $logs->where('status','aman')->count(); $total = max($logs->count(),1); @endphp
 
 <div class="page-top">
   <div><h1>HACCP</h1><p>Checklist harian titik kendali kritis · {{ now()->translatedFormat('l, j F Y') }}</p></div>
-  <div class="actions"><button class="btn ghost">Riwayat</button><button class="btn">Isi checklist</button></div>
+  <div class="actions"><button class="btn ghost">Riwayat</button>@if($boleh('haccp.tulis'))<button class="btn">Isi checklist</button>@endif</div>
 </div>
 
 <div class="kpis">
@@ -41,6 +42,7 @@
 
 @php $dev = $logs->where('status','deviasi'); @endphp
 
+@if($boleh('haccp.tulis'))
 <div class="grid g-2" style="margin-top:14px">
   <div class="card">
     <div class="card-head"><div><h3>Catat checklist</h3><div class="sub">Satu baris per titik kontrol</div></div></div>
@@ -75,5 +77,6 @@
     @endforelse
   </div>
 </div>
+@endif
 
 @endsection
