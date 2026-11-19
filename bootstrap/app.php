@@ -1,5 +1,15 @@
 <?php
 
+// Workaround untuk hosting yang masih memakai classmap Composer lama.
+// Setelah `composer dump-autoload -o` berhasil, blok ini boleh dihapus.
+$loader = require __DIR__.'/../vendor/autoload.php';
+
+if ($loader instanceof \Composer\Autoload\ClassLoader) {
+    $loader->setClassMapAuthoritative(false);
+    $loader->addPsr4('App\\', __DIR__.'/../app', true);
+    $loader->addPsr4('Database\\Seeders\\', __DIR__.'/../database/seeders', true);
+}
+
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;

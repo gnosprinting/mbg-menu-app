@@ -10,7 +10,7 @@ gizi memakai basis data TKPI dan target 30% AKG per sajian.
 
 ## Fitur
 
-- **Siklus menu 6/12 hari** — toggle tampilan, tanggal, resep per hari, gramasi otomatis per kategori.
+- **Siklus menu 5/10 atau 6/12 hari** — pilih pola lewat Pengaturan, lengkap dengan tanggal, resep per hari, dan gramasi otomatis per kategori.
 - **Komposisi & capaian gizi** — energi, protein, lemak, karbohidrat, serat, vitamin A/B, natrium;
   capaian terhadap target 30% AKG, ekspor PDF/Excel.
 - **Kebutuhan bahan & belanja** — konversi nasi → beras (÷2,6), koreksi BDD, buffer 10%,
