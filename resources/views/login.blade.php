@@ -26,20 +26,12 @@
   .auth button{width:100%;justify-content:center;margin-top:14px}
   .demo{margin-top:18px;border-top:1px solid var(--line);padding-top:12px;font-size:11px;color:var(--muted);line-height:1.9}
   .demo code{background:#F1EBFF;color:#5B2BE0;border-radius:6px;padding:1px 6px;font-size:10.5px}
-  .roles{margin-top:14px;border-top:1px solid var(--line);padding-top:12px;display:flex;flex-direction:column;gap:7px}
-  .roles .role{display:flex;align-items:flex-start;gap:8px;font-size:10.5px;line-height:1.4}
-  .roles .role b{flex:0 0 78px;color:var(--ink);font-size:10.5px}
-  .roles .role span{color:var(--muted);min-width:0;max-width:100%;overflow-wrap:anywhere}
   .auth .right{min-width:0}
-  .roles{min-width:0;max-width:100%}
-  .roles .role{min-width:0;max-width:100%}
   .demo{overflow-wrap:anywhere}
   @media(max-width:760px){
     .auth{grid-template-columns:1fr}
     .auth .left{display:none}
     .auth .right{padding:26px 20px}
-    .roles .role{flex-direction:column;gap:1px}
-    .roles .role b{flex:none}
   }
 </style>
 </head>
@@ -82,13 +74,6 @@
         <code>akuntan@wareg.id</code> — Akuntan
       </div>
 
-      <div class="roles">
-        <div class="role"><b>Admin SPPG</b><span>Akses penuh: pengguna, pengaturan, menu, master data, stok, PO, dan audit.</span></div>
-        <div class="role"><b>Ahli Gizi</b><span>Menyusun menu, bahan, kategori, varian, komposisi, dan capaian gizi.</span></div>
-        <div class="role"><b>Petugas Dapur</b><span>Mengelola stok, PO, HACCP, dan sisa makanan; tidak mengubah menu atau master.</span></div>
-        <div class="role"><b>Pengawas</b><span>Memantau menu, gizi, HACCP, stok, dan laporan; hanya baca.</span></div>
-        <div class="role"><b>Akuntan</b><span>Mengelola belanja/PO, menyetujui PO, dan membuka audit log; tidak mengubah menu.</span></div>
-      </div>
     </div>
   </div>
 </body>
