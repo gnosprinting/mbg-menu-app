@@ -2,6 +2,13 @@
 
 namespace App\Services;
 
+/**
+ * Akses — matriks fitur dan peran.
+ *
+ * Dipakai dua lapis: middleware rute untuk menolak request (403), dan view
+ * untuk menyembunyikan menu/tombol yang tidak boleh dipakai. Dengan begitu
+ * UI tidak menampilkan aksi yang akan gagal di server.
+ */
 class Akses
 {
     /** Fitur dan role yang boleh memakainya. */
@@ -25,11 +32,13 @@ class Akses
         'laporan.lihat' => ['admin', 'gizi', 'dapur', 'pengawas', 'akuntan'],
     ];
 
+    /** Peran pengguna aktif; 'tamu' bila belum login. */
     public static function peran(?string $peran = null): string
     {
         return $peran ?? auth()->user()?->peran ?? 'tamu';
     }
 
+    /** Cek apakah peran tertentu boleh memakai sebuah fitur. */
     public static function boleh(string $fitur, ?string $peran = null): bool
     {
         return in_array(self::peran($peran), self::PETA[$fitur] ?? [], true);
@@ -43,6 +52,7 @@ class Akses
         return array_keys(array_filter(self::PETA, fn ($roles) => in_array($peran, $roles, true)));
     }
 
+    /** Label manusiawi untuk nama peran. */
     public static function label(?string $peran = null): string
     {
         return [

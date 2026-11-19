@@ -5,10 +5,19 @@ namespace App\Services;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * Nutrition — mesin perhitungan gizi.
+ *
+ * Semua nilai gizi disimpan per 100 g (TKPI). Gram menu ditulis untuk profil
+ * basis SD 1–3, lalu diskalakan ke profil kategori lain. Hasil komposisi
+ * di-cache sebagai JSON agar halaman tidak menghitung ulang setiap request.
+ */
 class Nutrition
 {
+    /** Profil gram basis (SD 1–3) yang menjadi acuan skala. */
     public static function baseProfile(): array
     {
+        // SD 1–3 adalah profil acuan: gram menu ditulis untuk profil ini.
         $k = DB::table('kategori')->where('kode', 'SD13')->first();
         $p = DB::table('profil_porsi')->where('kategori_id', $k->id)->first();
 
@@ -19,6 +28,7 @@ class Nutrition
         ];
     }
 
+    /** Profil gram satu kategori; fallback ke profil basis bila tidak ada. */
     public static function profile(int $kategoriId): array
     {
         $p = DB::table('profil_porsi')->where('kategori_id', $kategoriId)->first();
@@ -33,6 +43,7 @@ class Nutrition
         ];
     }
 
+    /** Ambil bahan menu satu hari beserta nilai gizi dan harga efektif. */
     public static function menu(int $hari, ?int $siklusId = null)
     {
         $siklusId = $siklusId ?: (int) Siklus::aktif()->id;
@@ -42,6 +53,8 @@ class Nutrition
             return collect();
         }
 
+        // COALESCE memilih nilai dari versi bahan yang dikunci saat menu dibuat;
+        // bila belum ada versi, pakai nilai master bahan saat ini.
         return DB::table('menu_bahan as mb')
             ->join('bahan as b', 'b.id', '=', 'mb.bahan_id')
             ->leftJoin('bahan_versi as v', 'v.id', '=', 'mb.bahan_versi_id')
@@ -105,10 +118,12 @@ class Nutrition
         $t = ['gram' => 0, 'energi' => 0, 'protein' => 0, 'lemak' => 0, 'kh' => 0, 'natrium' => 0, 'serat' => 0, 'vit_a' => 0, 'vit_b' => 0];
 
         foreach (self::menu($hari, $siklusId) as $m) {
+            // Gram menu tersimpan untuk profil SD 1–3; skala ke kategori tujuan.
             $peran = $m->peran === 'bumbu' ? 'bumbu' : $m->peran;
             $rasio = ($base[$peran] ?? 0) > 0 ? ($prof[$peran] ?? 0) / $base[$peran] : 1;
             $gram = (float) $m->gram * $rasio;
 
+            // Nilai TKPI adalah per 100 g, jadi kalikan gram aktual / 100.
             $e = $gram / 100 * (float) $m->energi;
             $p = $gram / 100 * (float) $m->protein;
             $l = $gram / 100 * (float) $m->lemak;
@@ -133,6 +148,7 @@ class Nutrition
         }
 
         // Tambahan 3B tidak ikut diskalakan: gram sudah ditetapkan per kategori.
+        // Baris ini ikut masuk subtotal dan capaian, tetapi bukan menu_bahan.
         if ($menuHari) {
             foreach (self::tambahan($menuHari->id, $kategoriId) as $s) {
                 $gram = (float) $s->gram;
@@ -174,9 +190,11 @@ class Nutrition
         return $result;
     }
 
+    /** Hitung target 30% AKG (atau target khusus kategori). */
     public static function target(int $kategoriId): array
     {
         $k = DB::table('kategori')->where('id', $kategoriId)->first();
+        // Target default 30% AKG harian; kategori tertentu boleh punya target khusus.
         $persen = (float) (DB::table('pengaturan')->where('kunci', 'target_persen')->value('nilai') ?? 30) / 100;
 
         return [
@@ -191,8 +209,10 @@ class Nutrition
         ];
     }
 
+    /** Klasifikasikan capaian gizi menjadi kurang/waspada/aman/lebih/tinggi. */
     public static function status(float $pct): string
     {
+        // Ambang status dipakai untuk warna/label capaian di UI.
         return match (true) {
             $pct < 75 => 'kurang',
             $pct < 90 => 'waspada',

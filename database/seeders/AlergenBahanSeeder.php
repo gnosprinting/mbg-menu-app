@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\DB;
  */
 class AlergenBahanSeeder extends Seeder
 {
+    /** Isi relasi alergen–bahan bila belum ada. */
     public function run(): void
     {
         $peta = [

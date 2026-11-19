@@ -6,8 +6,14 @@ use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
+/**
+ * UserSeeder — akun demo lima peran.
+ *
+ * Semua akun memakai sandi awal "password"; wajib diganti sebelum produksi.
+ */
 class UserSeeder extends Seeder
 {
+    /** Buat/Perbarui akun demo berdasarkan email. */
     public function run(): void
     {
         $lokasi = DB::table('lokasi')->where('nama', 'SPPG Wareg')->value('id')

@@ -9,18 +9,28 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
 
+/**
+ * PageController — semua endpoint baca (GET).
+ *
+ * Controller ini tidak mengubah data. Tugasnya mengambil data dari database,
+ * memakai Nutrition/Belanja/Siklus untuk perhitungan, lalu mengirim hasilnya
+ * ke Blade. Query yang berat (Beranda, komposisi) memakai cache.
+ */
 class PageController extends Controller
 {
+    /** Ambil siklus yang sedang dipakai sesuai pengaturan. */
     private function siklusAktif()
     {
         return Siklus::aktif();
     }
 
+    /** Daftar kategori penerima manfaat, diurutkan sesuai tampilan. */
     private function kategoriList()
     {
         return DB::table('kategori')->orderBy('urutan')->get();
     }
 
+    /** Nama menu untuk satu hari pada siklus tertentu. */
     private function menuNama(int $hari, ?int $siklusId = null): string
     {
         return DB::table('menu_hari')->where('siklus_id', $siklusId ?? $this->siklusAktif()->id)
@@ -42,6 +52,7 @@ class PageController extends Controller
         return $out;
     }
 
+    /** Ringkasan dashboard: menu, gizi, belanja, stok kritis, dan penerima; di-cache 10 menit. */
     public function beranda()
     {
         $siklus = $this->siklusAktif();
@@ -119,6 +130,7 @@ class PageController extends Controller
         return view('beranda', $data);
     }
 
+    /** Halaman siklus menu: daftar hari, bahan, filter tanggal, dan tambahan 3B. */
     public function siklus(Request $r)
     {
         $siklus = $this->siklusAktif();
@@ -127,6 +139,7 @@ class PageController extends Controller
         $jumlah = Siklus::panjang();
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
 
+        // Batasi hari sesuai panjang siklus aktif; filter tanggal opsional.
         $q = DB::table('menu_hari')->where('siklus_id', $siklus->id)->where('hari', '<=', $jumlah);
         if ($r->dari) {
             $q->whereDate('tanggal', '>=', $r->dari);
@@ -143,6 +156,7 @@ class PageController extends Controller
         });
 
         // Hanya bahan mentah + bumbu wajib; nama olahan disaring lewat kata kunci.
+        // Tujuannya agar dropdown berisi bahan yang benar-benar dibeli dapur.
         $bumbuWajib = ['Garam beryodium', 'Kecap manis', 'Minyak kelapa sawit', 'Gula putih'];
         $olahan = ['goreng', 'rebus', 'kukus', 'bakar', 'panggang', 'tumis', 'keripik', 'kerupuk',
             'biskuit', 'kue', 'roti', 'sambal', 'masakan', 'kaleng', 'asin', 'manisan', 'selai',
@@ -162,6 +176,7 @@ class PageController extends Controller
         $base = $this->profiles()[$sd->id];
         $kategori3b = DB::table('kategori')->whereIn('kode', ['HAMIL', 'MENYUSUI', 'PRE'])
             ->orderBy('urutan')->get();
+        // Tambahan 3B diambil per menu/kategori agar bisa tampil sebagai chip.
         $tambahan = DB::table('menu_tambahan as mt')
             ->join('menu_hari as mh', 'mh.id', '=', 'mt.menu_hari_id')
             ->join('kategori as k', 'k.id', '=', 'mt.kategori_id')
@@ -177,6 +192,7 @@ class PageController extends Controller
         return view('siklus_menu', compact('siklus', 'menu', 'bahan', 'jumlah', 'opsi', 'pola', 'profiles', 'kategori', 'base', 'kategori3b', 'tambahan'));
     }
 
+    /** Detail satu hari menu beserta bahan dan komposisi gizinya. */
     public function siklusDetail(int $id)
     {
         $m = DB::table('menu_hari')->find($id);
@@ -196,11 +212,13 @@ class PageController extends Controller
         return view('siklus_detail', compact('m', 'items', 'komp', 'sd', 'tambahan'));
     }
 
+    /** Tabel komposisi gizi satu kategori pada satu hari. */
     public function komposisi(Request $r)
     {
         $kategori = $this->kategoriList();
         $kat = DB::table('kategori')->find($r->kategori ?? DB::table('kategori')->where('kode', 'SD13')->value('id'));
         $siklus = $this->siklusAktif();
+        // Hari di luar siklus aktif dikembalikan ke hari 1 agar URL tidak error.
         $hari = (int) ($r->hari ?: 1);
         if ($hari < 1 || $hari > $siklus->jumlah_hari) {
             $hari = 1;
@@ -211,6 +229,7 @@ class PageController extends Controller
         return view('komposisi', compact('kategori', 'kat', 'hari', 'data', 'menuNama') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
+    /** Capaian gizi seluruh kategori pada satu hari. */
     public function capaian(Request $r)
     {
         $kategori = $this->kategoriList();
@@ -235,6 +254,7 @@ class PageController extends Controller
         return view('capaian', compact('kategori', 'kat', 'hari', 'data', 'semua') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
+    /** Kebutuhan bahan dan biaya untuk satu kategori/hari/sejumlah porsi. */
     public function kebutuhan(Request $r)
     {
         $kategori = $this->kategoriList();
@@ -253,6 +273,7 @@ class PageController extends Controller
         return view('kebutuhan', compact('kategori', 'kat', 'hari', 'porsi', 'keb', 'pagu', 'penerima', 'semua') + ['jumlah' => $siklus->jumlah_hari]);
     }
 
+    /** Halaman gabungan pemeriksaan alergi dan aturan/varian. */
     public function alergi(Request $r)
     {
         $siklus = $this->siklusAktif();
@@ -272,6 +293,7 @@ class PageController extends Controller
 
             return $p;
         });
+        // Hasil pemeriksaan: hanya PM yang alergennya benar-benar ada di menu hari itu.
         $terpicu = $this->deteksiAlergi($hari);
         $lokasi = DB::table('lokasi')->orderBy('nama')->get();
         $alergen = DB::table('alergen')->orderBy('nama')->get();
@@ -285,6 +307,7 @@ class PageController extends Controller
         ));
     }
 
+    /** Cocokkan alergen penerima dengan bahan menu (termasuk tambahan 3B). */
     private function deteksiAlergi(int $hari): array
     {
         $mh = DB::table('menu_hari')->where('siklus_id', $this->siklusAktif()->id)->where('hari', $hari)->first();
@@ -315,8 +338,10 @@ class PageController extends Controller
         return $hasil;
     }
 
+    /** Stok bahan, perkiraan pemakaian, mutasi terakhir, dan PO. */
     public function stok()
     {
+        // Urutkan dari rasio stok/minimum terkecil: barang paling kritis di atas.
         $items = DB::table('stok_item')->orderByRaw('stok / NULLIF(minimum,0) ASC')->get();
         $sd = DB::table('kategori')->where('kode', 'SD13')->first();
         $penerima = Belanja::totalPenerima();
@@ -341,6 +366,7 @@ class PageController extends Controller
         return view('stok', compact('items', 'mutasi', 'penerima', 'po', 'poItems', 'poUsers'));
     }
 
+    /** Log HACCP dan jumlah deviasi. */
     public function haccp()
     {
         $logs = DB::table('haccp_log')->orderBy('id')->get();
@@ -349,6 +375,7 @@ class PageController extends Controller
         return view('haccp', compact('logs', 'deviasi'));
     }
 
+    /** Catatan sisa makanan dan persentasenya. */
     public function sisa()
     {
         $rows = DB::table('sisa_makanan')->orderBy('id')->get();
@@ -359,6 +386,7 @@ class PageController extends Controller
         return view('sisa', compact('rows', 'totalSaji', 'totalSisa', 'pct'));
     }
 
+    /** Master lokasi/penerima dengan periode aktif dan jumlah PM alergi. */
     public function masterPenerima()
     {
         $lokasi = DB::table('lokasi')->orderBy('nama')->get()->map(function ($l) {
@@ -376,6 +404,7 @@ class PageController extends Controller
         return view('master_penerima', compact('lokasi', 'total', 'kategori'));
     }
 
+    /** Detail satu baris penerima dan riwayat periodenya. */
     public function penerimaDetail(int $id)
     {
         $row = DB::table('penerima_kategori as pk')->join('kategori as k', 'k.id', '=', 'pk.kategori_id')
@@ -390,6 +419,7 @@ class PageController extends Controller
         return view('penerima_detail', compact('row', 'kategori', 'pmTerkait', 'riwayat'));
     }
 
+    /** Master bahan dengan pencarian, filter kelompok, dan pagination. */
     public function masterBahan(Request $r)
     {
         $q = DB::table('bahan');
@@ -411,6 +441,7 @@ class PageController extends Controller
         return view('master_bahan', compact('bahan', 'kelompokList', 'total'));
     }
 
+    /** Detail bahan, riwayat versi, alergen, dan pemakaian di menu. */
     public function bahanDetail(int $id)
     {
         $b = DB::table('bahan')->find($id);
@@ -427,6 +458,7 @@ class PageController extends Controller
         return view('bahan_detail', compact('b', 'dipakai', 'riwayat', 'alergen', 'terpakaiMenu'));
     }
 
+    /** Daftar kategori, jumlah penerima, dan profil porsi. */
     public function masterKategori()
     {
         $kategori = $this->kategoriList()->map(function ($k) {
@@ -439,6 +471,7 @@ class PageController extends Controller
         return view('master_kategori', compact('kategori'));
     }
 
+    /** Daftar alergen dan jumlah relasinya ke PM/bahan. */
     public function masterAlergen()
     {
         $alergen = DB::table('alergen')->orderBy('nama')->get()->map(function ($a) {
@@ -451,6 +484,7 @@ class PageController extends Controller
         return view('master_alergen', compact('alergen'));
     }
 
+    /** Audit log dengan filter kata/peran dan ringkasan. */
     public function audit(Request $r)
     {
         $cari = trim((string) $r->q);
@@ -489,6 +523,7 @@ class PageController extends Controller
         return view('audit', compact('log', 'ringkas', 'filter', 'cari'));
     }
 
+    /** Halaman sumber data TKPI, DBMP, dan harga acuan. */
     public function sumber()
     {
         $sumber = DB::table('sumber_data')->orderBy('kode')->get();
@@ -502,11 +537,13 @@ class PageController extends Controller
         return view('sumber', compact('sumber', 'perKelompok', 'totalBahan', 'dbmpBahan', 'golongan', 'hargaAcuan', 'bahanTanpaHarga'));
     }
 
+    /** Halaman pusat laporan/ekspor. */
     public function laporan()
     {
         return view('laporan');
     }
 
+    /** Daftar pengguna dan lokasi tugasnya. */
     public function pengguna()
     {
         $users = DB::table('users as u')->leftJoin('lokasi as l', 'l.id', '=', 'u.lokasi_id')
@@ -515,6 +552,7 @@ class PageController extends Controller
         return view('pengguna', compact('users'));
     }
 
+    /** Data pengguna untuk halaman ubah. */
     public function penggunaDetail(int $id)
     {
         $u = DB::table('users')->find($id);
@@ -524,6 +562,7 @@ class PageController extends Controller
         return view('pengguna_detail', compact('u', 'lokasi'));
     }
 
+    /** Alias lama: arahkan ke tab aturan alergi. */
     public function varian()
     {
         return redirect('/alergi?tab=aturan');
@@ -546,6 +585,7 @@ class PageController extends Controller
             $a->lokasi = DB::table('pm_alergi')->where('kategori_id', $a->kategori_id)->count();
         }
 
+        // Varian preeklampsia memakai kategori khusus dan batas natrium dari pengaturan.
         $pre = DB::table('kategori')->where('khusus', 1)->first();
         $natriumMax = (float) (DB::table('pengaturan')->where('kunci', 'natrium_max')->value('nilai') ?? 600);
         $menuPre = [];
@@ -569,6 +609,7 @@ class PageController extends Controller
         return compact('aturan', 'pre', 'menuPre', 'natriumMax');
     }
 
+    /** Halaman pengaturan umum dan pola siklus. */
     public function pengaturan()
     {
         $settings = DB::table('pengaturan')->pluck('nilai', 'kunci')->all();

@@ -5,11 +5,18 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * IsiHargaAcuan — isi harga bahan yang masih nol dari tabel harga_acuan.
+ *
+ * Pencocokan dilakukan dari nama komoditas yang sama, lalu fallback ke nama
+ * yang mengandung komoditas. Harga bahan dan versi aktif ikut diperbarui.
+ */
 class IsiHargaAcuan extends Command
 {
     protected $signature = 'mbg:isi-harga {--dry : Tampilkan rencana tanpa menulis}';
     protected $description = 'Isi harga bahan yang masih 0 dari tabel harga_acuan (pasar tradisional).';
 
+    /** Cocokkan bahan tanpa harga dengan harga acuan dan perbarui bila diminta. */
     public function handle(): int
     {
         $acuan = DB::table('harga_acuan')->orderByDesc('tanggal')->get();

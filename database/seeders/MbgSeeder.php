@@ -5,8 +5,15 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * MbgSeeder — data contoh aplikasi.
+ *
+ * Membuat kategori, profil porsi, penerima contoh, menu, bahan menu, dan
+ * data operasional secukupnya agar aplikasi langsung dapat dicoba.
+ */
 class MbgSeeder extends Seeder
 {
+    /** Isi data contoh MBG secara lengkap. */
     public function run(): void
     {
         // ---------------- pengaturan ----------------

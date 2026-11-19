@@ -5,12 +5,20 @@ namespace App\Console\Commands;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * ImportTkpi — impor bahan mentah dari CSV TKPI.
+ *
+ * Hanya bahan mentah yang masuk; nama olahan disaring dengan pola kata.
+ * Data gizi disimpan per 100 g, BDD disimpan sebagai persen, dan harga awal 0
+ * sampai diisi oleh perintah mbg:isi-harga.
+ */
 class ImportTkpi extends Command
 {
     protected $signature = 'mbg:import-tkpi {file? : Path tkpi.csv}';
 
     protected $description = 'Impor bahan mentah dari Tabel Komposisi Pangan Indonesia (CSV)';
 
+    /** Baca CSV, saring bahan olahan/duplikat, kelompokkan, lalu simpan ke tabel bahan. */
     public function handle(): int
     {
         $path = $this->argument('file') ?: (is_file(base_path('../tkpi.csv')) ? base_path('../tkpi.csv') : database_path('data/tkpi.csv'));

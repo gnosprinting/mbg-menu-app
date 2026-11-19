@@ -6,11 +6,14 @@
   var KEY = 'mbg-offline-queue';
   var BAR = null;
 
+  // Baca antrian dari localStorage; data rusak dianggap antrian kosong.
   function baca() {
     try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
   }
+  // Simpan antrian dan perbarui indikator di layar.
   function simpan(q) { localStorage.setItem(KEY, JSON.stringify(q)); render(); }
 
+  // Tampilkan bilah status: jumlah entri, status online, dan tombol Kirim.
   function render() {
     var q = baca();
     if (!q.length && navigator.onLine) { if (BAR) BAR.remove(); BAR = null; return; }
@@ -35,6 +38,7 @@
     }
   }
 
+  // Buat ID unik agar server dapat menolak kiriman ganda (idempotensi).
   function uuid() {
     if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
@@ -43,6 +47,7 @@
     });
   }
 
+  // Ubah isi form menjadi objek, tambahkan client_uuid, lalu simpan ke antrian.
   function enqueue(form) {
     var q = baca();
     var data = {};
@@ -54,6 +59,7 @@
 
   var flushing = false;
 
+  // Kirim antrian satu per satu; hentikan saat offline atau server menolak.
   function flush() {
     if (flushing) return;
     var q = baca();

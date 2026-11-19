@@ -6,8 +6,16 @@ use App\Services\Siklus;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * ActionController — semua endpoint tulis (POST).
+ *
+ * Alur umum: validasi input → cek aturan bisnis → tulis dalam transaksi bila
+ * melibatkan beberapa tabel → kembalikan flash message. Middleware AuditLog
+ * mencatat request tulis dan menaikkan versi cache agregat.
+ */
 class ActionController extends Controller
 {
+    /** Tambah penerima manfaat lama (tabel penerima). */
     public function storePenerima(Request $r)
     {
         $data = $r->validate([
@@ -31,6 +39,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Penerima manfaat ditambahkan.');
     }
 
+    /** Tambah bahan baru dan buka periode versi pertamanya. */
     public function storeBahan(Request $r)
     {
         $data = $r->validate([
@@ -59,6 +68,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Bahan ditambahkan.');
     }
 
+    /** Buat atau ubah menu satu hari pada siklus aktif. */
     public function storeMenu(Request $r)
     {
         $maks = Siklus::panjang();
@@ -95,6 +105,7 @@ class ActionController extends Controller
         return redirect('/siklus?hari='.Siklus::panjang())->with('ok', 'Menu hari '.$data['hari'].' disimpan.');
     }
 
+    /** Tambahkan bahan ke menu; gram, versi, dan harga dikunci saat itu. */
     public function storeMenuBahan(Request $r)
     {
         $data = $r->validate([
@@ -126,6 +137,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Bahan ditambahkan ke menu.');
     }
 
+    /** Catat mutasi stok masuk/keluar/opname dan perbarui stok. */
     public function storeMutasi(Request $r)
     {
         $data = $r->validate([
@@ -156,6 +168,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Mutasi stok dicatat.');
     }
 
+    /** Tambah PM alergi beserta daftar alergennya. */
     public function storePmAlergi(Request $r)
     {
         $data = $r->validate([
@@ -179,6 +192,7 @@ class ActionController extends Controller
         return back()->with('ok', 'PM alergi ditambahkan.');
     }
 
+    /** Simpan tambahan 3B untuk kategori hamil/menyusui/preeklampsia. */
     public function storeTambahan3b(Request $r)
     {
         $data = $r->validate([
@@ -221,6 +235,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Tambahan 3B disimpan.');
     }
 
+    /** Hapus satu baris tambahan 3B. */
     public function deleteTambahan3b(int $id)
     {
         $hapus = DB::table('menu_tambahan')->where('id', $id)->delete();
@@ -228,8 +243,10 @@ class ActionController extends Controller
         return back()->with($hapus ? 'ok' : 'galat', $hapus ? 'Tambahan 3B dihapus.' : 'Tambahan 3B tidak ditemukan.');
     }
 
+    /** Simpan semua pengaturan yang dikirim form. */
     public function updatePengaturan(Request $r)
     {
+        // Form pengaturan mengirim pasangan kunci→nilai; simpan semua sebagai upsert.
         foreach ($r->except('_token') as $k => $v) {
             DB::table('pengaturan')->updateOrInsert(['kunci' => $k], ['nilai' => $v, 'updated_at' => now(), 'created_at' => now()]);
         }
@@ -237,6 +254,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Pengaturan disimpan.');
     }
 
+    /** Validasi dan ubah pola/panjang siklus aktif. */
     public function updateSiklus(Request $r)
     {
         $pola = (string) $r->input('pola_siklus');
@@ -253,6 +271,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Pola siklus diubah ke '.$pola.' · '.$panjang.' hari.');
     }
 
+    /** Catat checklist HACCP; client_uuid mencegah duplikat dari antrian offline. */
     public function storeHaccp(Request $r)
     {
         $data = $r->validate([
@@ -283,6 +302,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Checklist HACCP dicatat.');
     }
 
+    /** Tutup deviasi HACCP dengan tindakan korektif. */
     public function tutupDeviasi(Request $r, int $id)
     {
         $data = $r->validate(['tindakan' => 'required|string|max:255']);
@@ -294,6 +314,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Deviasi ditutup dengan tindakan korektif.');
     }
 
+    /** Catat/ubah sisa makanan per tanggal dan kelompok. */
     public function storeSisa(Request $r)
     {
         $data = $r->validate([
@@ -312,6 +333,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Sisa makanan dicatat.');
     }
 
+    /** Buat PO manual dari baris item dengan qty dan harga bebas. */
     public function storePoManual(Request $r)
     {
         // Buang baris kosong (form menyediakan beberapa baris).
@@ -347,6 +369,7 @@ class ActionController extends Controller
             ];
         }
 
+        // Nomor PO memakai tanggal + urutan; cukup untuk skala satu SPPG.
         $nomor = 'PO-'.now()->format('ymd').'-'.str_pad((string) (DB::table('po')->count() + 1), 3, '0', STR_PAD_LEFT);
         $id = DB::table('po')->insertGetId([
             'nomor' => $nomor, 'tanggal' => now()->toDateString(), 'status' => 'menunggu',
@@ -407,6 +430,7 @@ class ActionController extends Controller
     public function terimaPo(int $id)
     {
         $hasil = DB::transaction(function () use ($id) {
+            // Kunci baris PO agar dua petugas tidak menerima barang yang sama bersamaan.
             $po = DB::table('po')->lockForUpdate()->find($id);
             abort_if(! $po, 404);
 
@@ -460,6 +484,7 @@ class ActionController extends Controller
         return back()->with('ok', $hasil['ok']);
     }
 
+    /** Terapkan harga acuan ke bahan yang masih berharga nol. */
     public function applyHargaAcuan()
     {
         \Illuminate\Support\Facades\Artisan::call('mbg:isi-harga');
@@ -476,6 +501,7 @@ class ActionController extends Controller
         return back()->with(str_contains($out, 'Gagal') ? 'galat' : 'ok', $out);
     }
 
+    /** Buat PO otomatis dari bahan yang stoknya di bawah minimum. */
     public function buatPo(Request $r)
     {
         $kurang = DB::table('stok_item')->whereColumn('stok', '<', 'minimum')
@@ -490,6 +516,7 @@ class ActionController extends Controller
         $items = [];
 
         foreach ($kurang as $k) {
+            // Qty yang dipesan hanya selisih kekurangan sampai batas minimum.
             $qty = max(0, (float) $k->minimum - (float) $k->stok);
             $subtotal = (int) round($qty * $k->harga);
             $total += $subtotal;
@@ -513,6 +540,7 @@ class ActionController extends Controller
         return back()->with('ok', "PO {$nomor} dibuat: {$kurang->count()} item, total Rp ".number_format($total, 0, ',', '.').'.');
     }
 
+    /** Tambah pengguna baru dengan peran dan lokasi. */
     public function storeUser(Request $r)
     {
         $data = $r->validate([
@@ -533,6 +561,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Pengguna ditambahkan.');
     }
 
+    /** Tambah kategori baru dan salin profil porsi dasar. */
     public function storeKategori(Request $r)
     {
         $data = $r->validate([
@@ -563,6 +592,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Kategori ditambahkan.');
     }
 
+    /** Perbarui kategori dan profil gramnya. */
     public function updateKategori(Request $r, int $id)
     {
         $data = $r->validate([
@@ -592,6 +622,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Kategori diperbarui.');
     }
 
+    /** Hapus kategori bila belum dipakai penerima/PM alergi. */
     public function deleteKategori(int $id)
     {
         $dipakai = DB::table('penerima_kategori')->where('kategori_id', $id)->count()
@@ -605,6 +636,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Kategori dihapus.');
     }
 
+    /** Tambah master alergen. */
     public function storeAlergen(Request $r)
     {
         $data = $r->validate(['nama' => 'required|string|max:40|unique:alergen,nama']);
@@ -613,6 +645,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Alergen ditambahkan.');
     }
 
+    /** Ubah nama master alergen. */
     public function updateAlergen(Request $r, int $id)
     {
         $data = $r->validate(['nama' => 'required|string|max:40|unique:alergen,nama,'.$id]);
@@ -621,6 +654,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Nama alergen diperbarui.');
     }
 
+    /** Hapus alergen bila belum terhubung ke PM/bahan. */
     public function deleteAlergen(int $id)
     {
         $dipakai = DB::table('alergen_pm')->where('alergen_id', $id)->count()
@@ -633,6 +667,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Alergen dihapus.');
     }
 
+    /** Simpan jumlah penerima kategori sebagai periode baru. */
     public function storePenerimaKat(Request $r)
     {
         $data = $r->validate([
@@ -657,6 +692,7 @@ class ActionController extends Controller
             return;
         }
 
+        // Tutup periode lama dan buka periode baru dalam satu transaksi.
         DB::transaction(function () use ($aktif, $lokasiId, $kategoriId, $jumlah) {
             if ($aktif) {
                 DB::table('penerima_kategori')->where('id', $aktif->id)
@@ -670,6 +706,7 @@ class ActionController extends Controller
         });
     }
 
+    /** Ubah jumlah penerima; periode aktif membuat periode baru. */
     public function updatePenerimaKat(Request $r, int $id)
     {
         $data = $r->validate(['jumlah' => 'required|integer|min:0']);
@@ -685,6 +722,7 @@ class ActionController extends Controller
         return redirect('/master-penerima')->with('ok', 'Jumlah penerima diperbarui — periode lama tetap tersimpan.');
     }
 
+    /** Hapus penerima dan seluruh riwayat periodenya bila tidak punya PM alergi. */
     public function deletePenerimaKat(int $id)
     {
         $row = DB::table('penerima_kategori')->find($id);
@@ -707,6 +745,7 @@ class ActionController extends Controller
             return;
         }
 
+        // Snapshot menyimpan nilai yang berlaku mulai hari ini; menu lama tetap aman.
         DB::table('bahan_versi')->insert([
             'bahan_id' => $b->id, 'berlaku_dari' => $dari ?? now()->toDateString(), 'berlaku_sampai' => null,
             'energi' => $b->energi, 'protein' => $b->protein, 'lemak' => $b->lemak, 'kh' => $b->kh,
@@ -716,6 +755,7 @@ class ActionController extends Controller
         ]);
     }
 
+    /** Perbarui bahan; perubahan gizi/harga/BDD membuka periode versi baru. */
     public function updateBahan(Request $r, int $id)
     {
         $data = $r->validate([
@@ -761,6 +801,7 @@ class ActionController extends Controller
             : 'Bahan diperbarui (nilai gizi & harga tidak berubah, periode tetap).');
     }
 
+    /** Hapus bahan bila tidak dipakai menu/alergen dan bukan beras acuan. */
     public function deleteBahan(int $id)
     {
         $menu = DB::table('menu_bahan')->where('bahan_id', $id)->count();
@@ -784,6 +825,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Bahan dihapus.');
     }
 
+    /** Ubah nama/tanggal/metode satu menu. */
     public function updateMenu(Request $r, int $id)
     {
         $data = $r->validate([
@@ -797,6 +839,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Menu diperbarui.');
     }
 
+    /** Hapus menu beserta bahan-bahannya. */
     public function deleteMenu(int $id)
     {
         DB::table('menu_bahan')->where('menu_hari_id', $id)->delete();
@@ -805,6 +848,7 @@ class ActionController extends Controller
         return redirect('/siklus')->with('ok', 'Menu dihapus.');
     }
 
+    /** Keluarkan satu bahan dari menu. */
     public function deleteMenuBahan(int $id)
     {
         DB::table('menu_bahan')->where('id', $id)->delete();
@@ -812,6 +856,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Bahan dikeluarkan dari menu.');
     }
 
+    /** Perbarui data pengguna; password hanya diubah bila diisi. */
     public function updateUser(Request $r, int $id)
     {
         $data = $r->validate([
@@ -836,6 +881,7 @@ class ActionController extends Controller
         return redirect('/pengguna')->with('ok', 'Pengguna diperbarui.');
     }
 
+    /** Aktif/nonaktifkan pengguna selain akun sendiri. */
     public function toggleUser(int $id)
     {
         $u = DB::table('users')->find($id);
@@ -848,6 +894,7 @@ class ActionController extends Controller
         return back()->with('ok', 'Status pengguna diubah.');
     }
 
+    /** Unggah logo SPPG dan simpan path-nya di pengaturan. */
     public function uploadLogo(Request $r)
     {
         $r->validate(['logo' => 'required|image|max:2048']);

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\DB;
 /** Mencatat setiap aksi tulis (POST/PUT/DELETE) ke audit_log. */
 class AuditLog
 {
+    /** Catat request tulis ke audit_log lalu naikkan versi cache. */
     public function handle(Request $request, Closure $next)
     {
         $response = $next($request);

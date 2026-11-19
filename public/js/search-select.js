@@ -1,11 +1,13 @@
 /* Dropdown dengan pencarian — dipakai pada form Siklus Menu */
 (function () {
+  // Escape teks sebelum dimasukkan ke innerHTML (mencegah HTML injection).
   var esc = function (s) {
     return String(s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   };
 
+  // Ubah <select> asli menjadi input pencarian + daftar opsi.
   function build(sel) {
     if (sel.dataset.ssReady) return;
     sel.dataset.ssReady = '1';
@@ -121,6 +123,7 @@
     });
   }
 
+  // Pasang komponen pada semua select yang meminta pencarian.
   function init() {
     document.querySelectorAll('select[data-search]').forEach(build);
   }

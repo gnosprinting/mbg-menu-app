@@ -1,16 +1,27 @@
 <?php
 
+/*
+|--------------------------------------------------------------------------
+| Rute Menu MBG
+|--------------------------------------------------------------------------
+| Rute GET hanya membaca data (PageController/ExportController). Rute POST
+| mengubah data (ActionController). Middleware "auth" mewajibkan login dan
+| "peran:..." membatasi aksi sesuai matriks akses di App\Services\Akses.
+*/
+
 use App\Http\Controllers\ActionController;
 use App\Http\Controllers\ExportController;
 use App\Http\Controllers\LoginController;
 use App\Http\Controllers\PageController;
 use Illuminate\Support\Facades\Route;
 
+// Autentikasi: tamu hanya boleh membuka form/login; logout butuh sesi aktif.
 Route::get('/login', [LoginController::class, 'form'])->name('login')->middleware('guest');
 Route::post('/login', [LoginController::class, 'login'])->middleware('guest');
 Route::post('/logout', [LoginController::class, 'logout'])->middleware('auth');
 
 Route::middleware('auth')->group(function () {
+    // Halaman baca — semua peran yang sudah login boleh melihat ringkasan.
     Route::get('/', [PageController::class, 'beranda'])->name('beranda');
     Route::get('/siklus', [PageController::class, 'siklus'])->name('siklus');
     Route::get('/siklus/{id}', [PageController::class, 'siklusDetail'])->name('siklus.detail');
@@ -22,6 +33,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/stok', [PageController::class, 'stok'])->name('stok');
     Route::get('/haccp', [PageController::class, 'haccp'])->name('haccp');
     Route::get('/sisa', [PageController::class, 'sisa'])->name('sisa');
+
+    // Master data — hanya admin dan ahli gizi.
     Route::get('/master-penerima', [PageController::class, 'masterPenerima'])->middleware('peran:admin,gizi')->name('master-penerima');
     Route::get('/master-penerima/{id}', [PageController::class, 'penerimaDetail'])->middleware('peran:admin,gizi')->name('penerima.detail');
     Route::get('/master-bahan', [PageController::class, 'masterBahan'])->middleware('peran:admin,gizi')->name('master-bahan');
@@ -35,7 +48,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/pengaturan', [PageController::class, 'pengaturan'])->middleware('peran:admin,gizi')->name('pengaturan');
     Route::get('/audit', [PageController::class, 'audit'])->middleware('peran:admin,akuntan')->name('audit');
 
-    // ekspor nyata (PDF & Excel dari database)
+    // Ekspor laporan: PDF untuk dicetak, XLSX untuk diolah kembali.
     Route::get('/export/komposisi.pdf', [ExportController::class, 'komposisiPdf'])->name('export.komposisi.pdf');
     Route::get('/export/komposisi.xlsx', [ExportController::class, 'komposisiXlsx'])->name('export.komposisi.xlsx');
     Route::get('/export/capaian.pdf', [ExportController::class, 'capaianPdf'])->name('export.capaian.pdf');
@@ -44,7 +57,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/export/alergi.pdf', [ExportController::class, 'alergiPdf'])->name('export.alergi.pdf');
     Route::get('/export/alergi.xlsx', [ExportController::class, 'alergiXlsx'])->name('export.alergi.xlsx');
 
-    // tulis menu & gizi
+    // Tulis menu, master, pengaturan, dan data gizi — admin & ahli gizi.
     Route::middleware('peran:admin,gizi')->group(function () {
         Route::post('/penerima', [ActionController::class, 'storePenerima'])->name('penerima.store');
         Route::post('/bahan', [ActionController::class, 'storeBahan'])->name('bahan.store');

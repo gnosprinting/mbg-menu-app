@@ -5,6 +5,12 @@ namespace App\Providers;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\ServiceProvider;
 
+/**
+ * AppServiceProvider — konfigurasi global aplikasi.
+ *
+ * Saat ini hanya menetapkan panjang default string 191 karakter agar indeks
+ * MySQL/MariaDB lama (batas 1000 byte) tetap kompatibel dengan utf8mb4.
+ */
 class AppServiceProvider extends ServiceProvider
 {
     /**

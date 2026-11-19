@@ -13,8 +13,16 @@ use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 
+/**
+ * ExportController — ekspor laporan ke PDF dan Excel.
+ *
+ * Data diambil dari service yang sama dengan halaman web agar angka laporan
+ * konsisten. PDF dirender dari Blade oleh Dompdf; Excel memakai PhpSpreadsheet
+ * lalu file sementara dihapus setelah dikirim.
+ */
 class ExportController extends Controller
 {
+    /** Normalisasi parameter kategori/hari/porsi dari request. */
     private function ctx(Request $r): array
     {
         $kat = DB::table('kategori')->find($r->kategori ?? DB::table('kategori')->where('kode', 'SD13')->value('id'));
@@ -24,6 +32,7 @@ class ExportController extends Controller
         return [$kat, $hari, $porsi];
     }
 
+    /** Render view menjadi PDF A4 dan kirim sebagai attachment. */
     private function pdf(string $view, array $data, string $filename, string $orientasi = 'landscape')
     {
         $html = view($view, $data)->render();
@@ -38,6 +47,7 @@ class ExportController extends Controller
         ]);
     }
 
+    /** Ekspor tabel komposisi gizi ke PDF. */
     public function komposisiPdf(Request $r)
     {
         [$kat, $hari, $porsi] = $this->ctx($r);
@@ -48,6 +58,7 @@ class ExportController extends Controller
             'Komposisi_'.$kat->kode.'_H'.$hari.'.pdf');
     }
 
+    /** Ekspor capaian gizi semua kategori ke PDF. */
     public function capaianPdf(Request $r)
     {
         [$kat, $hari] = $this->ctx($r);
@@ -66,6 +77,7 @@ class ExportController extends Controller
             'Capaian_'.$kat->kode.'_H'.$hari.'.pdf');
     }
 
+    /** Ekspor kebutuhan bahan/belanja ke PDF. */
     public function kebutuhanPdf(Request $r)
     {
         [$kat, $hari, $porsi] = $this->ctx($r);
@@ -76,6 +88,7 @@ class ExportController extends Controller
             'Kebutuhan_'.$kat->kode.'_H'.$hari.'.pdf');
     }
 
+    /** Ekspor komposisi gizi ke Excel dengan format tabel. */
     public function komposisiXlsx(Request $r)
     {
         [$kat, $hari] = $this->ctx($r);
@@ -129,6 +142,7 @@ class ExportController extends Controller
         return response()->download($file, 'Komposisi_'.$kat->kode.'_H'.$hari.'.xlsx')->deleteFileAfterSend(true);
     }
 
+    /** Ekspor kebutuhan bahan/belanja ke Excel. */
     public function kebutuhanXlsx(Request $r)
     {
         [$kat, $hari, $porsi] = $this->ctx($r);
@@ -167,6 +181,7 @@ class ExportController extends Controller
         return response()->download($file, 'Kebutuhan_'.$kat->kode.'_H'.$hari.'.xlsx')->deleteFileAfterSend(true);
     }
 
+    /** Susun baris laporan alergi: PM, alergen, bahan terpicu, status. */
     private function alergiRows(int $hari): array
     {
         $menu = DB::table('menu_hari')->where('hari', $hari)->first();
@@ -194,6 +209,7 @@ class ExportController extends Controller
         return $rows;
     }
 
+    /** Ekspor laporan alergi ke PDF. */
     public function alergiPdf(Request $r)
     {
         $hari = (int) ($r->hari ?: 3);
@@ -203,6 +219,7 @@ class ExportController extends Controller
         return $this->pdf('exports.alergi', compact('rows', 'hari', 'menu'), 'Laporan_Alergi_H'.$hari.'.pdf');
     }
 
+    /** Ekspor laporan alergi ke Excel. */
     public function alergiXlsx(Request $r)
     {
         $hari = (int) ($r->hari ?: 3);

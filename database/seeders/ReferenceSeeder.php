@@ -5,8 +5,15 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 
+/**
+ * ReferenceSeeder — data referensi DBMP dan harga acuan awal.
+ *
+ * Dipakai untuk bahan penukar 8 golongan dan harga pasar awal; bukan data
+ * penerima atau menu contoh.
+ */
 class ReferenceSeeder extends Seeder
 {
+    /** Isi referensi DBMP dan harga acuan bila belum ada. */
     public function run(): void
     {
         $dbmp = [

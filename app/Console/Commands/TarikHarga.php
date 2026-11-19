@@ -56,6 +56,7 @@ class TarikHarga extends Command
         'Kecap manis' => ['kecap'],
     ];
 
+    /** Ambil JSON harga, petakan komoditas, lalu simpan perubahan harga acuan. */
     public function handle(): int
     {
         $provinsi = $this->option('provinsi');

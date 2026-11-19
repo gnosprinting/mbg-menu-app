@@ -15,6 +15,7 @@ use Illuminate\Support\Facades\DB;
  */
 class CycleSeeder extends Seeder
 {
+    /** Buat pengaturan siklus dan salin menu lama ke siklus 5/10/12. */
     public function run(): void
     {
         foreach (['pola_siklus' => Siklus::POLA_LIMA, 'panjang_siklus' => '10'] as $kunci => $nilai) {
