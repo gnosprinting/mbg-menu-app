@@ -7,7 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="/css/ui.css?v=10">
+<link rel="stylesheet" href="/css/ui.css?v=11">
 <style>
   body{display:flex;min-height:100vh;align-items:center;justify-content:center;background:
     radial-gradient(900px 400px at 15% 5%, #EDE7FF 0, transparent 60%),

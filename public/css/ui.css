@@ -264,6 +264,7 @@ svg .axis{fill:#A7AEC7;font-size:9px;font-family:Inter,Arial,sans-serif}
   .table-wrap::-webkit-scrollbar-thumb{background:#C9CFFA;border-radius:99px}
   .table-wrap::-webkit-scrollbar-track{background:#F1F3FC;border-radius:99px}
   .table-hint{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--muted);margin:-2px 0 8px;padding-left:2px}
+  svg .axis{font-size:16px}
   table th,table td{padding-left:6px;padding-right:6px}
 }
 @media (max-width:600px){
