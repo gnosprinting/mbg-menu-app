@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/vendor/fontawesome/css/all.min.css">
-<link rel="stylesheet" href="/css/ui.css?v=8">
+<link rel="stylesheet" href="/css/ui.css?v=10">
 <script>document.documentElement.dataset.theme = localStorage.getItem("mbg-theme") || "light";</script>
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <script src="/js/search-select.js?v=2" defer></script>
@@ -166,6 +166,32 @@ $boleh = fn (string $fitur) => \App\Services\Akses::boleh($fitur);
     side.querySelectorAll('a').forEach(function (a) {
       a.addEventListener('click', function () { setNav(false); });
     });
+  })();
+</script>
+<script>
+  // Tandai tabel yang lebih lebar dari layar dan tampilkan petunjuk geser.
+  // Tabel tetap dapat digeser horizontal; petunjuk hanya muncul di mobile.
+  (function () {
+    function markTables() {
+      document.querySelectorAll('.table-wrap').forEach(function (wrap) {
+        var scrollable = wrap.scrollWidth > wrap.clientWidth + 4;
+        wrap.classList.toggle('is-scrollable', scrollable);
+        var prev = wrap.previousElementSibling;
+        if (scrollable && (!prev || !prev.classList.contains('table-hint'))) {
+          var hint = document.createElement('div');
+          hint.className = 'table-hint';
+          hint.innerHTML = '<i class="fa-solid fa-arrows-left-right"></i> Geser tabel untuk melihat kolom lain';
+          wrap.parentNode.insertBefore(hint, wrap);
+        } else if (!scrollable && prev && prev.classList.contains('table-hint')) {
+          prev.remove();
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', function () {
+      markTables();
+      setTimeout(markTables, 250);
+    });
+    window.addEventListener('resize', markTables);
   })();
 </script>
 </body>
